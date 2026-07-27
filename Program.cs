@@ -59,7 +59,6 @@ var app = builder.Build();
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("PermitirTudo");
 app.UseAuthentication();
 app.UseAuthorization();
