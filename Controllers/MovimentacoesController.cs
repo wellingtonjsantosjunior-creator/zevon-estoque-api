@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -24,7 +24,7 @@ public class MovimentacoesController : ControllerBase
     [HttpPost("entrada")]
     public async Task<IActionResult> Entrada([FromBody] MovimentacaoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         var saldoAtual = await conn.QueryFirstOrDefaultAsync<decimal?>(@"
             SELECT quantidade
@@ -99,7 +99,7 @@ public class MovimentacoesController : ControllerBase
     [HttpPost("saida")]
     public async Task<IActionResult> Saida([FromBody] MovimentacaoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         var saldoAtual = await conn.QueryFirstOrDefaultAsync<decimal?>(@"
             SELECT quantidade
@@ -162,7 +162,7 @@ public class MovimentacoesController : ControllerBase
     [HttpGet("saldo")]
     public async Task<IActionResult> Saldo([FromQuery] int idFilial)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         var saldo = await conn.QueryAsync(@"
             SELECT
@@ -193,7 +193,7 @@ public class MovimentacoesController : ControllerBase
         [FromQuery] int idFilial,
         [FromQuery] int? idProduto)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var kardex = await conn.QueryAsync(@"
             SELECT
@@ -228,7 +228,7 @@ public class MovimentacoesController : ControllerBase
     [HttpGet("etiqueta/{codigo}")]
     public async Task<IActionResult> BuscarEtiqueta(string codigo)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var produto = await conn.QueryFirstOrDefaultAsync(@"
             SELECT TOP 1
@@ -255,7 +255,7 @@ public class MovimentacoesController : ControllerBase
     [HttpGet("prateleira/{codigo}")]
     public async Task<IActionResult> BuscarPrateleira(string codigo)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var produtos = await conn.QueryAsync(@"
             SELECT

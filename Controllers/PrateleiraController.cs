@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -20,7 +20,7 @@ public class PrateleirasController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar([FromQuery] int? idFilial)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var prateleiras = await conn.QueryAsync(@"
             SELECT
@@ -44,7 +44,7 @@ public class PrateleirasController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] PrateleiraRequest prateleira)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             INSERT INTO Prateleiras
@@ -61,7 +61,7 @@ public class PrateleirasController : ControllerBase
         int id,
         [FromBody] PrateleiraRequest prateleira)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Prateleiras
@@ -87,7 +87,7 @@ public class PrateleirasController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Inativar(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Prateleiras

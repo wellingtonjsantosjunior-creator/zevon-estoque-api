@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -24,7 +24,7 @@ public class ProdutosController : ControllerBase
     public async Task<IActionResult> Listar([FromQuery] int? idFilial)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var produtos = await conn.QueryAsync(@"
             SELECT
@@ -65,7 +65,7 @@ public class ProdutosController : ControllerBase
     public async Task<IActionResult> BuscarPorId(int id)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var produto = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
@@ -100,7 +100,7 @@ public class ProdutosController : ControllerBase
         int id, [FromBody] AtualizarEstoqueMinimoRequest request)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE EstoqueFilial
@@ -146,7 +146,7 @@ public class ProdutosController : ControllerBase
             return BadRequest("Filial e obrigatoria para gerar estoque e etiqueta.");
 
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         // Gera SKU único baseado no ID do produto ou timestamp
 var prefixo = "PROD";
@@ -217,7 +217,7 @@ await conn.ExecuteAsync(@"
     public async Task<IActionResult> Atualizar(int id, [FromBody] ProdutoRequest produto)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Produtos
@@ -251,7 +251,7 @@ await conn.ExecuteAsync(@"
         int idProduto, [FromQuery] int? idFilial)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var result = await conn.QueryAsync(@"
             SELECT
@@ -274,7 +274,7 @@ await conn.ExecuteAsync(@"
     public async Task<IActionResult> Inativar(int id)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Produtos SET ativo = 0 

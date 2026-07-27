@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -30,7 +30,7 @@ public class AuthController : ControllerBase
             string.IsNullOrWhiteSpace(request.Senha))
             return BadRequest("Informe o login e a senha.");
 
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var usuario = await conn.QueryFirstOrDefaultAsync<Usuario>(@"
             SELECT 
@@ -78,7 +78,7 @@ public class AuthController : ControllerBase
         if (request.IdUsuario <= 0 || string.IsNullOrWhiteSpace(request.NovaSenha))
             return BadRequest("Dados inválidos.");
 
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var senhaHash = GerarHash(request.NovaSenha.Trim());
 
@@ -100,7 +100,7 @@ public class AuthController : ControllerBase
             string.IsNullOrWhiteSpace(request.Nome))
             return BadRequest("Nome, email/login e senha são obrigatórios.");
 
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var senhaHash = GerarHash(request.SenhaHash.Trim());
 

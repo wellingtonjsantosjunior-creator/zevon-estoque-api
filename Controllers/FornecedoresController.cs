@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -20,7 +20,7 @@ public class FornecedoresController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar()
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var fornecedores = await conn.QueryAsync(@"
             SELECT
@@ -37,7 +37,7 @@ public class FornecedoresController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] FornecedorRequest fornecedor)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             INSERT INTO Fornecedores (nome, telefone, email)
@@ -49,7 +49,7 @@ public class FornecedoresController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Atualizar(int id, [FromBody] FornecedorRequest fornecedor)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Fornecedores
@@ -71,7 +71,7 @@ public class FornecedoresController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Excluir(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             DELETE FROM Fornecedores

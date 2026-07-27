@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 using ZevonEstoque.Models;
 
@@ -18,7 +18,7 @@ public class TransferenciasController : ControllerBase
         _connectionString = connectionString;
     }
 
-    private async Task<bool> FilialEmInventario(SqlConnection conn, int idFilial)
+    private async Task<bool> FilialEmInventario(NpgsqlConnection conn, int idFilial)
     {
         var inv = await conn.QueryFirstOrDefaultAsync(@"
             SELECT id_inventario FROM Inventarios
@@ -34,7 +34,7 @@ public class TransferenciasController : ControllerBase
         [FromQuery] int? idFilialDestino,
         [FromQuery] string? status)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         var itens = await conn.QueryAsync(@"
             SELECT
                 t.id_transferencia AS idTransferencia,
@@ -122,7 +122,7 @@ public class TransferenciasController : ControllerBase
     {
         try
         {
-            using var conn = new SqlConnection(_connectionString);
+            using var conn = new NpgsqlConnection(_connectionString);
 
             if (await FilialEmInventario(conn, request.IdFilialOrigem))
                 return BadRequest("INVENTARIO_EM_ANDAMENTO_ORIGEM");
@@ -243,7 +243,7 @@ public class TransferenciasController : ControllerBase
     [HttpGet("grupo/{idGrupo}")]
     public async Task<IActionResult> BuscarGrupo(string idGrupo)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         var itens = await conn.QueryAsync(@"
             SELECT
                 t.id_transferencia AS idTransferencia,
@@ -304,7 +304,7 @@ public class TransferenciasController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> BuscarPorId(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         var result = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
                 t.id_transferencia AS idTransferencia,
@@ -342,7 +342,7 @@ public class TransferenciasController : ControllerBase
     public async Task<IActionResult> ReceberGrupo(
         string idGrupo, [FromBody] ReceberGrupoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var itens = await conn.QueryAsync(@"
             SELECT t.id_transferencia AS idTransferencia,
@@ -438,7 +438,7 @@ public class TransferenciasController : ControllerBase
     public async Task<IActionResult> Receber(
         int id, [FromBody] ReceberTransferenciaRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var transferencia = await conn.QueryFirstOrDefaultAsync(@"
             SELECT t.*, pr.id_filial AS idFilialOrigem, fo.nome AS filialOrigem

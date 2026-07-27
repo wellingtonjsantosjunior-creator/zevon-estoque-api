@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -21,7 +21,8 @@ public class InventarioController : ControllerBase
     [HttpGet("status/{idFilial}")]
     public async Task<IActionResult> VerificarStatus(int idFilial)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
+
         var inventario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT id_inventario AS idInventario,
                    status,
@@ -48,7 +49,7 @@ public class InventarioController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar([FromQuery] int? idFilial)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
         var inventarios = await conn.QueryAsync(@"
             SELECT
                 i.id_inventario AS idInventario,
@@ -86,7 +87,7 @@ public class InventarioController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] CriarInventarioRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         // Verifica se já existe inventário programado/em andamento
         var jaExiste = await conn.QueryFirstOrDefaultAsync(@"
@@ -123,7 +124,7 @@ public class InventarioController : ControllerBase
     [HttpPut("{id}/iniciar")]
     public async Task<IActionResult> Iniciar(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var inventario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT * FROM Inventarios WHERE id_inventario = @Id",
@@ -166,7 +167,7 @@ public class InventarioController : ControllerBase
     public async Task<IActionResult> BuscarFichasPrateleira(
         int id, string codigoBarras)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         var prateleira = await conn.QueryFirstOrDefaultAsync(@"
             SELECT id_prateleira AS idPrateleira,
@@ -213,7 +214,7 @@ public class InventarioController : ControllerBase
     public async Task<IActionResult> SalvarContagem(
         int idFicha, [FromBody] SalvarContagemRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         var ficha = await conn.QueryFirstOrDefaultAsync(@"
             SELECT saldo_sistema FROM InventarioFichas
@@ -244,7 +245,7 @@ public class InventarioController : ControllerBase
     public async Task<IActionResult> Finalizar(
         int id, [FromBody] FinalizarInventarioRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Inventarios
@@ -272,7 +273,7 @@ public class InventarioController : ControllerBase
     public async Task<IActionResult> Aprovar(
         int id, [FromBody] AprovarInventarioRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         var inventario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT * FROM Inventarios WHERE id_inventario = @Id",
@@ -371,7 +372,7 @@ return Ok(new
      async Task<IActionResult> Rejeitar(
         int id, [FromBody] AprovarInventarioRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Inventarios
@@ -394,7 +395,7 @@ return Ok(new
     [HttpGet("{id}/bloco")]
      async Task<IActionResult> BuscarBloco(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var inventario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT

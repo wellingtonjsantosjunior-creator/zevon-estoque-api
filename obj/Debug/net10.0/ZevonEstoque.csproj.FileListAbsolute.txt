@@ -109,3 +109,5 @@ C:\Users\welli\zevon-estoque-api\ZevonEstoque\bin\Debug\net10.0\publish\publish_
 C:\Users\welli\zevon-estoque-api\ZevonEstoque\bin\Debug\net10.0\publish\publish_out\ZevonEstoque.deps.json
 C:\Users\welli\zevon-estoque-api\ZevonEstoque\bin\Debug\net10.0\publish\publish_out\ZevonEstoque.runtimeconfig.json
 C:\Users\welli\zevon-estoque-api\ZevonEstoque\bin\Debug\net10.0\publish\publish_out\ZevonEstoque.staticwebassets.endpoints.json
+C:\Users\welli\zevon-estoque-api\ZevonEstoque\obj\Debug\net10.0\ZevonEstoque.sourcelink.json
+C:\Users\welli\zevon-estoque-api\ZevonEstoque\bin\Debug\net10.0\Npgsql.dll

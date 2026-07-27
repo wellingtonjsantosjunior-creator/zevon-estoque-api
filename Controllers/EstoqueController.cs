@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 using ZevonEstoque.Models;
 
@@ -18,7 +18,7 @@ public class EstoqueController : ControllerBase
         _connectionString = connectionString;
     }
 
-    private async Task<bool> FilialEmInventario(SqlConnection conn, int idFilial)
+    private async Task<bool> FilialEmInventario(NpgsqlConnection conn, int idFilial)
     {
         var inventario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT id_inventario FROM Inventarios
@@ -31,7 +31,7 @@ public class EstoqueController : ControllerBase
     [HttpPost("entrada")]
     public async Task<IActionResult> Entrada([FromBody] EntradaRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         if (await FilialEmInventario(conn, request.IdFilial))
             return BadRequest("INVENTARIO_EM_ANDAMENTO");
@@ -54,7 +54,7 @@ public class EstoqueController : ControllerBase
     [HttpPost("saida")]
     public async Task<IActionResult> Saida([FromBody] SaidaRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var prateleira = await conn.QueryFirstOrDefaultAsync<dynamic>(@"
             SELECT id_filial FROM Prateleiras
@@ -82,7 +82,7 @@ public class EstoqueController : ControllerBase
     [HttpGet("kardex")]
     public async Task<IActionResult> Kardex([FromQuery] KardexFiltro filtro)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var resultado = await conn.QueryAsync(
             "EXEC sp_Kardex @id_filial, @id_produto, @data_inicio, @data_fim",
@@ -100,7 +100,7 @@ public class EstoqueController : ControllerBase
     [HttpGet("saldo/{idFilial}")]
     public async Task<IActionResult> Saldo(int idFilial)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var resultado = await conn.QueryAsync(@"
             SELECT 
@@ -125,7 +125,7 @@ public class EstoqueController : ControllerBase
     [HttpGet("etiqueta/{codigoBarras}")]
 public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
 {
-    using var conn = new SqlConnection(_connectionString);
+    using var conn = new NpgsqlConnection(_connectionString);
 
     var resultado = await conn.QueryFirstOrDefaultAsync(@"
         SELECT TOP 1
@@ -166,7 +166,7 @@ public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
     [HttpGet("prateleira/{codigoBarras}")]
     public async Task<IActionResult> BuscarPrateleira(string codigoBarras)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         var resultado = await conn.QueryAsync(@"
             SELECT 

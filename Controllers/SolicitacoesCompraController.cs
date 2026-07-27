@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -25,7 +25,7 @@ public async Task<IActionResult> Listar(
 {
     try
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         var result = await conn.QueryAsync(@"
             SELECT
                 sc.id_solicitacao AS idSolicitacao,
@@ -85,7 +85,7 @@ public async Task<IActionResult> Listar(
     [HttpPost("sugestoes/{idFilial}")]
     public async Task<IActionResult> GerarSugestoes(int idFilial)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         // Busca produtos abaixo do mínimo que não têm sugestão ativa
         var produtosAbaixo = await conn.QueryAsync(@"
@@ -146,7 +146,7 @@ public async Task<IActionResult> Listar(
     public async Task<IActionResult> Criar(
         [FromBody] CriarSolicitacaoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var id = await conn.QueryFirstAsync<int>(@"
             INSERT INTO SolicitacoesCompra
@@ -178,7 +178,7 @@ public async Task<IActionResult> Listar(
     public async Task<IActionResult> Aceitar(
         int id, [FromBody] AceitarSugestaoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE SolicitacoesCompra
@@ -221,7 +221,7 @@ public async Task<IActionResult> Listar(
     public async Task<IActionResult> Aprovar(
         int id, [FromBody] AprovarSolicitacaoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var sol = await conn.QueryFirstOrDefaultAsync(@"
             SELECT sc.*, u.id_usuario AS idSolicitante
@@ -268,7 +268,7 @@ public async Task<IActionResult> Listar(
     public async Task<IActionResult> Rejeitar(
         int id, [FromBody] AprovarSolicitacaoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var sol = await conn.QueryFirstOrDefaultAsync(
             "SELECT id_usuario_solicitante FROM SolicitacoesCompra WHERE id_solicitacao = @Id",
@@ -305,7 +305,7 @@ public async Task<IActionResult> Listar(
     public async Task<IActionResult> Concluir(
         int id, [FromBody] ConcluirSolicitacaoRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE SolicitacoesCompra
@@ -323,7 +323,7 @@ public async Task<IActionResult> Listar(
     [HttpDelete("{id}")]
     public async Task<IActionResult> Descartar(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             DELETE FROM SolicitacoesCompra
@@ -336,7 +336,7 @@ public async Task<IActionResult> Listar(
 
     // ── HELPER ────────────────────────────────────────────────────
     private async Task _notificarAprovadores(
-        SqlConnection conn, int idFilial, int idSolicitacao)
+        NpgsqlConnection conn, int idFilial, int idSolicitacao)
     {
         var aprovadores = await conn.QueryAsync<dynamic>(@"
             SELECT id_usuario AS idUsuario FROM Usuarios

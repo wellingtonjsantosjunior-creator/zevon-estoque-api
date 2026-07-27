@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 using System.Security.Cryptography;
 using System.Text;
@@ -26,7 +26,7 @@ public class UsuariosController : ControllerBase
     public async Task<IActionResult> Listar([FromQuery] int? idFilial)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         var usuarios = await conn.QueryAsync(@"
             SELECT
                 u.id_usuario AS idUsuario,
@@ -51,7 +51,8 @@ public class UsuariosController : ControllerBase
     public async Task<IActionResult> BuscarPorId(int id)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
+        
         var usuario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
                 u.id_usuario AS idUsuario,
@@ -82,7 +83,7 @@ public class UsuariosController : ControllerBase
             return BadRequest("Senha é obrigatória.");
 
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         // Verifica se email já existe na mesma empresa
         var existe = await conn.QueryFirstOrDefaultAsync<int>(
@@ -112,7 +113,7 @@ public class UsuariosController : ControllerBase
     public async Task<IActionResult> Atualizar(int id, [FromBody] UsuarioRequest request)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         if (!string.IsNullOrWhiteSpace(request.Senha))
         {
@@ -165,7 +166,7 @@ public class UsuariosController : ControllerBase
     public async Task<IActionResult> Inativar(int id)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         await conn.ExecuteAsync(
             "UPDATE Usuarios SET ativo = 0 WHERE id_usuario = @Id AND IdEmpresa = @IdEmpresa",
             new { Id = id, IdEmpresa = idEmpresa });
@@ -175,7 +176,7 @@ public class UsuariosController : ControllerBase
     [HttpPut("{id}/fcm-token")]
     public async Task<IActionResult> AtualizarFcmToken(int id, [FromBody] FcmTokenRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         await conn.ExecuteAsync(
             "UPDATE Usuarios SET fcm_token = @Token WHERE id_usuario = @Id",
             new { Id = id, Token = request.Token });

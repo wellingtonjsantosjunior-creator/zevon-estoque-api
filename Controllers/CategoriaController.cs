@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -20,7 +20,7 @@ public class CategoriasController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar()
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var categorias = await conn.QueryAsync(@"
             SELECT
@@ -36,7 +36,7 @@ public class CategoriasController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] CategoriaRequest categoria)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             INSERT INTO Categorias (nome, descricao)
@@ -48,7 +48,7 @@ public class CategoriasController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Atualizar(int id, [FromBody] CategoriaRequest categoria)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Categorias
@@ -68,7 +68,7 @@ public class CategoriasController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Excluir(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             DELETE FROM Categorias

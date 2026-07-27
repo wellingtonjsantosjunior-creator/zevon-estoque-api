@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -20,7 +20,8 @@ public class NotificacoesController : ControllerBase
     [HttpGet("{idUsuario}")]
     public async Task<IActionResult> Listar(int idUsuario)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
+        
         var lista = await conn.QueryAsync(@"
             SELECT
                 id_notificacao AS idNotificacao,
@@ -38,7 +39,7 @@ public class NotificacoesController : ControllerBase
     [HttpGet("{idUsuario}/nao-lidas")]
     public async Task<IActionResult> ContarNaoLidas(int idUsuario)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         var count = await conn.ExecuteScalarAsync<int>(
             "SELECT COUNT(*) FROM Notificacoes WHERE id_usuario = @IdUsuario AND lida = 0",
             new { IdUsuario = idUsuario });
@@ -48,7 +49,7 @@ public class NotificacoesController : ControllerBase
     [HttpPut("{idUsuario}/marcar-lidas")]
     public async Task<IActionResult> MarcarLidas(int idUsuario)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         await conn.ExecuteAsync(
             "UPDATE Notificacoes SET lida = 1 WHERE id_usuario = @IdUsuario AND lida = 0",
             new { IdUsuario = idUsuario });
@@ -58,7 +59,7 @@ public class NotificacoesController : ControllerBase
     [HttpDelete("{idUsuario}")]
     public async Task<IActionResult> Limpar(int idUsuario)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         await conn.ExecuteAsync(
             "DELETE FROM Notificacoes WHERE id_usuario = @IdUsuario",
             new { IdUsuario = idUsuario });

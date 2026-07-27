@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -32,7 +32,7 @@ public class FiliaisController : ControllerBase
     public async Task<IActionResult> Listar()
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var filiais = await conn.QueryAsync(@"
             SELECT
@@ -58,7 +58,7 @@ public class FiliaisController : ControllerBase
     public async Task<IActionResult> Criar([FromBody] FilialRequest filial)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             INSERT INTO Filiais
@@ -82,7 +82,7 @@ public class FiliaisController : ControllerBase
     public async Task<IActionResult> Atualizar(int id, [FromBody] FilialRequest filial)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Filiais
@@ -110,7 +110,7 @@ public class FiliaisController : ControllerBase
     public async Task<IActionResult> Inativar(int id)
     {
         var idEmpresa = GetIdEmpresa();
-        using var conn = new SqlConnection(_connectionString);
+        using var conn =new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE Filiais

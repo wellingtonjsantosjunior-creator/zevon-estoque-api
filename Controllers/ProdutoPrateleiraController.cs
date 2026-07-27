@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 
 namespace ZevonEstoque.Controllers;
@@ -23,7 +23,7 @@ public class ProdutoPrateleiraController : ControllerBase
         [FromQuery] int? idProduto,
         [FromQuery] int? idPrateleira)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var vinculos = await conn.QueryAsync(@"
             SELECT
@@ -58,7 +58,7 @@ public class ProdutoPrateleiraController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] ProdutoPrateleiraRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             INSERT INTO ProdutoPrateleira
@@ -75,7 +75,7 @@ public class ProdutoPrateleiraController : ControllerBase
         int id,
         [FromBody] ProdutoPrateleiraRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             UPDATE ProdutoPrateleira
@@ -99,7 +99,7 @@ public class ProdutoPrateleiraController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Excluir(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
             DELETE FROM ProdutoPrateleira

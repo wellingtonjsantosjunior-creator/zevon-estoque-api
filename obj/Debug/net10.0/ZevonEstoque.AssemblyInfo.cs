@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZevonEstoque")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1b21e2e1abd26504bd6f101ae8729dcbbd34d12c")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZevonEstoque")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZevonEstoque")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

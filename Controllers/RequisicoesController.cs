@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Dapper;
 using FirebaseAdmin.Messaging;
 
@@ -25,7 +25,7 @@ public class RequisicoesController : ControllerBase
         [FromQuery] string? status,
         [FromQuery] int? idUsuario)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         // Busca todos os itens
         var itens = await conn.QueryAsync(@"
@@ -109,7 +109,7 @@ public class RequisicoesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> BuscarPorId(int id)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
         var requisicao = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
                 r.id_requisicao AS idRequisicao,
@@ -151,7 +151,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
     if (request.IdProduto == 0) return BadRequest("Produto e obrigatorio.");
     if (request.Quantidade <= 0) return BadRequest("Quantidade invalida.");
 
-    using var conn = new SqlConnection(_connectionString);
+    using var conn = new NpgsqlConnection(_connectionString);
 
     // Converte idGrupo string para Guid ou gera novo
     Guid idGrupo;
@@ -215,7 +215,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
         int id,
         [FromBody] AtualizarStatusRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var requisicao = await conn.QueryFirstOrDefaultAsync(@"
             SELECT r.*, u.fcm_token AS fcmTokenSolicitante,
@@ -252,7 +252,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
         string idGrupo,
         [FromBody] AtualizarStatusRequest request)
     {
-        using var conn = new SqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         // Busca todos os itens do grupo
         var itens = await conn.QueryAsync(@"
@@ -310,7 +310,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
     // ── HELPERS ───────────────────────────────────────────────────
 
     private async Task _NotificarMudancaStatus(
-        SqlConnection conn, int id,
+        NpgsqlConnection conn, int id,
         AtualizarStatusRequest request,
         dynamic requisicao)
     {
@@ -336,7 +336,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
     }
 
     private async Task NotificarOperadores(
-        SqlConnection conn, int idFilial, string titulo, string corpo)
+        NpgsqlConnection conn, int idFilial, string titulo, string corpo)
     {
         var operadores = await conn.QueryAsync<dynamic>(@"
             SELECT id_usuario AS idUsuario, fcm_token AS fcmToken
@@ -355,7 +355,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
     }
 
     private async Task SalvarNotificacaoBanco(
-        SqlConnection conn, int idUsuario, string titulo, string corpo)
+        NpgsqlConnection conn, int idUsuario, string titulo, string corpo)
     {
         await conn.ExecuteAsync(@"
             INSERT INTO Notificacoes (id_usuario, titulo, corpo)
