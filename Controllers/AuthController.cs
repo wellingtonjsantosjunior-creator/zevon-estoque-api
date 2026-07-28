@@ -85,7 +85,7 @@ public class AuthController : ControllerBase
         await conn.ExecuteAsync(@"
             UPDATE Usuarios 
             SET senha_hash = @SenhaHash,
-                primeiro_acesso = 0
+                primeiro_acesso = false
             WHERE id_usuario = @IdUsuario",
             new { SenhaHash = senhaHash, IdUsuario = request.IdUsuario });
 
