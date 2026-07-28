@@ -105,19 +105,19 @@ public class AuthController : ControllerBase
         var senhaHash = GerarHash(request.SenhaHash.Trim());
 
         await conn.ExecuteAsync(@"
-            INSERT INTO Usuarios 
-            (id_filial, nome, email, senha_hash, perfil, ativo, criado_em, primeiro_acesso, IdEmpresa)
-            VALUES 
-            (@IdFilial, @Nome, @Email, @SenhaHash, @Perfil, 1, GETDATE(), 1, @IdEmpresa)",
-            new
-            {
-                request.IdFilial,
-                request.Nome,
-                Email = request.Email.Trim(),
-                SenhaHash = senhaHash,
-                Perfil = string.IsNullOrWhiteSpace(request.Perfil) ? "OPERADOR" : request.Perfil,
-                request.IdEmpresa
-            });
+    INSERT INTO Usuarios 
+    (id_filial, nome, email, senha_hash, perfil, ativo, criado_em, primeiro_acesso, IdEmpresa)
+    VALUES 
+    (@IdFilial, @Nome, @Email, @SenhaHash, @Perfil, true, NOW(), true, @IdEmpresa)",
+    new
+    {
+        request.IdFilial,
+        request.Nome,
+        Email = request.Email.Trim(),
+        SenhaHash = senhaHash,
+        Perfil = string.IsNullOrWhiteSpace(request.Perfil) ? "OPERADOR" : request.Perfil,
+        request.IdEmpresa
+    });
 
         return Ok("Usuário criado com sucesso.");
     }

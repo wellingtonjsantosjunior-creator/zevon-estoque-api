@@ -94,17 +94,19 @@ public class UsuariosController : ControllerBase
         var senhaHash = GerarHash(request.Senha);
 
         await conn.ExecuteAsync(@"
-            INSERT INTO Usuarios (id_filial, nome, email, senha_hash, perfil, ativo, criado_em, primeiro_acesso, IdEmpresa)
-            VALUES (@IdFilial, @Nome, @Email, @SenhaHash, @Perfil, 1, GETDATE(), 1, @IdEmpresa)",
-            new
-            {
-                request.IdFilial,
-                request.Nome,
-                request.Email,
-                SenhaHash = senhaHash,
-                Perfil = request.Perfil.ToUpper(),
-                IdEmpresa = idEmpresa
-            });
+    INSERT INTO Usuarios 
+    (id_filial, nome, email, senha_hash, perfil, ativo, criado_em, primeiro_acesso, IdEmpresa)
+    VALUES 
+    (@IdFilial, @Nome, @Email, @SenhaHash, @Perfil, true, NOW(), true, @IdEmpresa)",
+    new
+    {
+        request.IdFilial,
+        request.Nome,
+        request.Email,
+        SenhaHash = senhaHash,
+        Perfil = request.Perfil.ToUpper(),
+        IdEmpresa = idEmpresa
+    });
 
         return Ok("Usuário cadastrado com sucesso.");
     }
