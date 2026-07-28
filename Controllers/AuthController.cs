@@ -46,7 +46,7 @@ public class AuthController : ControllerBase
                 u.IdEmpresa    AS IdEmpresa
             FROM Usuarios u
             WHERE u.email = @Email
-              AND u.ativo = 1",
+              AND u.ativo = true",
             new { Email = request.Email.Trim() });
 
         if (usuario == null)
