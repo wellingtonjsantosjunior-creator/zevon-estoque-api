@@ -45,7 +45,7 @@ public class FiliaisController : ControllerBase
                 criado_em  AS criadoEm,
                 IdEmpresa  AS idEmpresa
             FROM Filiais
-            WHERE ativo = 1
+            WHERE ativo = true
               AND IdEmpresa = @IdEmpresa
             ORDER BY nome",
             new { IdEmpresa = idEmpresa });
