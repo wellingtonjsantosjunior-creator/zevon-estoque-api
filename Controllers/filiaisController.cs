@@ -45,7 +45,7 @@ public class FiliaisController : ControllerBase
                 criado_em  AS criadoEm,
                 IdEmpresa  AS idEmpresa
             FROM Filiais
-            WHERE ativo = true
+            WHERE ativo IS TRUE
               AND IdEmpresa = @IdEmpresa
             ORDER BY nome",
             new { IdEmpresa = idEmpresa });
@@ -78,32 +78,18 @@ public class FiliaisController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize]
-    public async Task<IActionResult> Atualizar(int id, [FromBody] FilialRequest filial)
+[Authorize]
+public IActionResult Atualizar(int id, [FromBody] FilialRequest filial)
+{
+    return Ok(new
     {
-        var idEmpresa = GetIdEmpresa();
-        using var conn =new NpgsqlConnection(_connectionString);
-
-        await conn.ExecuteAsync(@"
-            UPDATE Filiais
-            SET nome     = @Nome,
-                cnpj     = @Cnpj,
-                endereco = @Endereco,
-                cidade   = @Cidade
-            WHERE id_filial  = @Id
-              AND IdEmpresa  = @IdEmpresa",
-            new
-            {
-                Id = id,
-                filial.Nome,
-                filial.Cnpj,
-                filial.Endereco,
-                filial.Cidade,
-                IdEmpresa = idEmpresa
-            });
-
-        return Ok("Filial atualizada com sucesso.");
-    }
+        IdRecebido = id,
+        Nome = filial.Nome,
+        Cnpj = filial.Cnpj,
+        Endereco = filial.Endereco,
+        Cidade = filial.Cidade
+    });
+}
 
     [HttpDelete("{id}")]
     [Authorize]
@@ -114,7 +100,7 @@ public class FiliaisController : ControllerBase
 
         await conn.ExecuteAsync(@"
             UPDATE Filiais
-            SET ativo = 0
+            SET ativo = false
             WHERE id_filial = @Id
               AND IdEmpresa = @IdEmpresa",
             new { Id = id, IdEmpresa = idEmpresa });
