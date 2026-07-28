@@ -4,7 +4,7 @@ using System.Text;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Configuration.Sources
     .OfType<Microsoft.Extensions.Configuration.Json.JsonConfigurationSource>()
