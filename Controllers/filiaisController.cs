@@ -79,16 +79,30 @@ public class FiliaisController : ControllerBase
 
     [HttpPut("{id}")]
 [Authorize]
-public IActionResult Atualizar(int id, [FromBody] FilialRequest filial)
+public async Task<IActionResult> Atualizar(int id, [FromBody] FilialRequest filial)
 {
-    return Ok(new
-    {
-        IdRecebido = id,
-        Nome = filial.Nome,
-        Cnpj = filial.Cnpj,
-        Endereco = filial.Endereco,
-        Cidade = filial.Cidade
-    });
+    var idEmpresa = GetIdEmpresa();
+    using var conn = new NpgsqlConnection(_connectionString);
+
+    await conn.ExecuteAsync(@"
+        UPDATE Filiais
+        SET nome = @Nome,
+            cnpj = @Cnpj,
+            endereco = @Endereco,
+            cidade = @Cidade
+        WHERE id_filial = @Id
+          AND IdEmpresa = @IdEmpresa",
+        new
+        {
+            Id = id,
+            filial.Nome,
+            filial.Cnpj,
+            filial.Endereco,
+            filial.Cidade,
+            IdEmpresa = idEmpresa
+        });
+
+    return Ok("Filial atualizada com sucesso.");
 }
 
     [HttpDelete("{id}")]
