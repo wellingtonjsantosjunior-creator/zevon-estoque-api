@@ -165,7 +165,7 @@ public class TransferenciasController : ControllerBase
                 SET tipo = 'TRANSFERENCIA_SAIDA',
                     observacao = @Obs
                 WHERE id_movimentacao = (
-                    SELECT TOP 1 id_movimentacao
+                    SELECT LIMIT 1 id_movimentacao
                     FROM Movimentacoes
                     WHERE id_produto = @IdProduto
                       AND id_filial = @IdFilialOrigem
@@ -388,7 +388,7 @@ public class TransferenciasController : ControllerBase
                 SET tipo = 'TRANSFERENCIA_ENTRADA',
                     observacao = @Obs
                 WHERE id_movimentacao = (
-                    SELECT TOP 1 id_movimentacao
+                    SELECT LIMIT 1 id_movimentacao
                     FROM Movimentacoes
                     WHERE id_produto = @IdProduto
                       AND id_filial = @IdFilial
@@ -471,7 +471,7 @@ public class TransferenciasController : ControllerBase
             SET tipo = 'TRANSFERENCIA_ENTRADA',
                 observacao = @Obs
             WHERE id_movimentacao = (
-                SELECT TOP 1 id_movimentacao
+                SELECT LIMIT 1 id_movimentacao
                 FROM Movimentacoes
                 WHERE id_produto = @IdProduto
                   AND id_filial = @IdFilial

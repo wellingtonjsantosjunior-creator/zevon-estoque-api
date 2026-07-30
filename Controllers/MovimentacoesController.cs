@@ -231,7 +231,7 @@ public class MovimentacoesController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
 
         var produto = await conn.QueryFirstOrDefaultAsync(@"
-            SELECT TOP 1
+            SELECT LIMIT 1
                 p.id_produto AS idProduto,
                 p.nome,
                 p.codigo_sku AS codigoSku,

@@ -128,7 +128,7 @@ public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
     using var conn = new NpgsqlConnection(_connectionString);
 
     var resultado = await conn.QueryFirstOrDefaultAsync(@"
-        SELECT TOP 1
+        SELECT LIMIT 1
             e.codigo_barras AS codigoEtiqueta,
             p.id_produto AS idProduto,
             p.nome AS produto,

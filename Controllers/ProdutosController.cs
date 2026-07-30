@@ -45,8 +45,8 @@ public class ProdutosController : ControllerBase
                 p.criado_em AS criadoEm,
                 ef.qtd_atual AS saldo,
                 ef.qtd_minima AS estoqueMinimo,
-                (SELECT TOP 1 codigo_barras FROM Etiquetas
-                 WHERE id_produto = p.id_produto AND ativo = 1) AS codigoEtiqueta
+                (SELECT LIMIT 1 codigo_barras FROM Etiquetas
+                 WHERE id_produto = p.id_produto AND ativo = true) AS codigoEtiqueta
             FROM Produtos p
             LEFT JOIN Categorias c ON p.id_categoria = c.id_categoria
             LEFT JOIN Fornecedores f ON p.id_fornecedor = f.id_fornecedor
@@ -82,8 +82,9 @@ public class ProdutosController : ControllerBase
                 p.unidade,
                 p.ativo,
                 p.criado_em AS criadoEm,
-                (SELECT TOP 1 codigo_barras FROM Etiquetas
-                 WHERE id_produto = p.id_produto AND ativo = 1) AS codigoEtiqueta
+                (SELECT codigo_barras FROM Etiquetas
+ WHERE id_produto = p.id_produto AND ativo = true
+ LIMIT 1) AS codigoEtiqueta
             FROM Produtos p
             WHERE p.id_produto = @Id
               AND p.IdEmpresa = @IdEmpresa",

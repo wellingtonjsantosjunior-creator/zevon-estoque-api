@@ -189,7 +189,7 @@ public class InventarioController : ControllerBase
                 f.saldo_sistema AS saldoSistema,
                 f.saldo_contado AS saldoContado,
                 f.divergencia,
-                (SELECT TOP 1 codigo_barras FROM Etiquetas
+                (SELECT LIMIT 1 codigo_barras FROM Etiquetas
                  WHERE id_produto = f.id_produto ORDER BY id_etiqueta DESC) AS codigoBarras
             FROM InventarioFichas f
             INNER JOIN Produtos p ON f.id_produto = p.id_produto
