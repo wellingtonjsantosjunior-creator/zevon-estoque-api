@@ -37,24 +37,25 @@ public class NotificacoesController : ControllerBase
     }
 
     [HttpGet("{idUsuario}/nao-lidas")]
-    public async Task<IActionResult> ContarNaoLidas(int idUsuario)
-    {
-        using var conn = new NpgsqlConnection(_connectionString);
-        var count = await conn.ExecuteScalarAsync<int>(
-            "SELECT COUNT(*) FROM Notificacoes WHERE id_usuario = @IdUsuario AND lida = 0",
-            new { IdUsuario = idUsuario });
-        return Ok(new { total = count });
-    }
+public async Task<IActionResult> ContarNaoLidas(int idUsuario)
+{
+    using var conn = new NpgsqlConnection(_connectionString);
+    var count = await conn.ExecuteScalarAsync<int>(
+        "SELECT COUNT(*) FROM Notificacoes WHERE id_usuario = @IdUsuario AND lida = false",
+        new { IdUsuario = idUsuario });
+    return Ok(new { total = count });
+}
 
-    [HttpPut("{idUsuario}/marcar-lidas")]
-    public async Task<IActionResult> MarcarLidas(int idUsuario)
-    {
-        using var conn = new NpgsqlConnection(_connectionString);
-        await conn.ExecuteAsync(
-            "UPDATE Notificacoes SET lida = 1 WHERE id_usuario = @IdUsuario AND lida = 0",
-            new { IdUsuario = idUsuario });
-        return Ok();
-    }
+[HttpPut("{idUsuario}/marcar-lidas")]
+public async Task<IActionResult> MarcarLidas(int idUsuario)
+{
+    using var conn = new NpgsqlConnection(_connectionString);
+    await conn.ExecuteAsync(
+        "UPDATE Notificacoes SET lida = true WHERE id_usuario = @IdUsuario AND lida = false",
+        new { IdUsuario = idUsuario });
+    return Ok();
+}
+
 
     [HttpDelete("{idUsuario}")]
     public async Task<IActionResult> Limpar(int idUsuario)
