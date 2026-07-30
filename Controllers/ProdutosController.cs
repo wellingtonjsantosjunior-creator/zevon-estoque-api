@@ -52,7 +52,7 @@ public class ProdutosController : ControllerBase
             LEFT JOIN Fornecedores f ON p.id_fornecedor = f.id_fornecedor
             LEFT JOIN EstoqueFilial ef ON ef.id_produto = p.id_produto
                 AND ef.id_filial = @IdFilial
-            WHERE p.ativo = 1
+            WHERE p.ativo = true
               AND p.IdEmpresa = @IdEmpresa
               AND (@IdFilial IS NULL OR p.id_filial = @IdFilial)
             ORDER BY p.nome",
@@ -277,7 +277,7 @@ await conn.ExecuteAsync(@"
         using var conn = new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
-            UPDATE Produtos SET ativo = 0 
+            UPDATE Produtos SET ativo = false
             WHERE id_produto = @Id
               AND IdEmpresa = @IdEmpresa",
             new { Id = id, IdEmpresa = idEmpresa });

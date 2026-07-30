@@ -59,7 +59,7 @@ var app = builder.Build();
     app.MapOpenApi();
 }
 
-app.UseCors("PermitirTudo");
+app.UseCors("PermitirTudo"  );
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

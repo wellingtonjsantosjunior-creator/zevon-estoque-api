@@ -99,7 +99,7 @@ public async Task<IActionResult> Listar(
             INNER JOIN Produtos p ON ef.id_produto = p.id_produto
             WHERE ef.id_filial = @IdFilial
               AND ef.qtd_atual <= ef.qtd_minima
-              AND p.ativo = 1
+              AND p.ativo = true
               AND NOT EXISTS (
                 SELECT 1 FROM SolicitacoesCompra sc
                 WHERE sc.id_produto = ef.id_produto
@@ -342,7 +342,7 @@ public async Task<IActionResult> Listar(
             SELECT id_usuario AS idUsuario FROM Usuarios
             WHERE id_filial = @IdFilial
               AND perfil IN ('ADMIN')
-              AND ativo = 1",
+              AND ativo = true",
             new { IdFilial = idFilial });
 
         foreach (var ap in aprovadores)

@@ -39,7 +39,7 @@ public class UsuariosController : ControllerBase
                 u.criado_em AS criadoEm
             FROM Usuarios u
             LEFT JOIN Filiais f ON u.id_filial = f.id_filial
-            WHERE u.ativo = 1
+            WHERE u.ativo = true
               AND u.IdEmpresa = @IdEmpresa
               AND (@IdFilial IS NULL OR u.id_filial = @IdFilial)
             ORDER BY u.nome",
@@ -170,7 +170,7 @@ public class UsuariosController : ControllerBase
         var idEmpresa = GetIdEmpresa();
         using var conn = new NpgsqlConnection(_connectionString);
         await conn.ExecuteAsync(
-            "UPDATE Usuarios SET ativo = 0 WHERE id_usuario = @Id AND IdEmpresa = @IdEmpresa",
+            "UPDATE Usuarios SET ativo = false WHERE id_usuario = @Id AND IdEmpresa = @IdEmpresa",
             new { Id = id, IdEmpresa = idEmpresa });
         return Ok("Usuário inativado.");
     }

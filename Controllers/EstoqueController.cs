@@ -115,7 +115,7 @@ public class EstoqueController : ControllerBase
             FROM EstoqueFilial ef
             INNER JOIN Produtos p ON ef.id_produto = p.id_produto
             WHERE ef.id_filial = @IdFilial
-              AND p.ativo = 1
+              AND p.ativo = true
             ORDER BY status DESC, p.nome",
             new { IdFilial = idFilial });
 
@@ -152,8 +152,8 @@ public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
            AND e.id_filial = pp.id_filial
         INNER JOIN Prateleiras pr ON pp.id_prateleira = pr.id_prateleira
         WHERE e.codigo_barras = @CodigoBarras 
-          AND e.ativo = 1
-          AND p.ativo = 1",
+          AND e.ativo = true
+          AND p.ativo = true",
         new { CodigoBarras = codigoBarras });
 
     if (resultado == null)
@@ -185,8 +185,8 @@ public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
                 ON p.id_produto = ef.id_produto 
                AND pr.id_filial = ef.id_filial
             WHERE pr.codigo_barras = @CodigoBarras 
-              AND pr.ativo = 1
-              AND p.ativo = 1",
+              AND pr.ativo = true
+              AND p.ativo = true",
             new { CodigoBarras = codigoBarras });
 
         if (!resultado.Any())

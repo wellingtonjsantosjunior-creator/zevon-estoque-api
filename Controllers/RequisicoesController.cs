@@ -343,7 +343,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
             FROM Usuarios
             WHERE id_filial = @IdFilial
               AND perfil IN ('ADMIN', 'OPERADOR')
-              AND ativo = 1",
+              AND ativo = true",
             new { IdFilial = idFilial });
 
         foreach (var op in operadores)

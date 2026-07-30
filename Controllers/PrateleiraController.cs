@@ -91,7 +91,7 @@ public class PrateleirasController : ControllerBase
 
         await conn.ExecuteAsync(@"
             UPDATE Prateleiras
-            SET ativo = 0
+            SET ativo = false
             WHERE id_prateleira = @Id",
             new { Id = id });
 

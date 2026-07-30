@@ -149,7 +149,7 @@ public class InventarioController : ControllerBase
             LEFT JOIN EstoqueFilial ef ON ef.id_produto = pp.id_produto
                 AND ef.id_filial = pr.id_filial
             WHERE pr.id_filial = @IdFilial
-              AND pr.ativo = 1
+              AND pr.ativo = true
             -- evita duplicata
             AND NOT EXISTS (
                 SELECT 1 FROM InventarioFichas f2

@@ -209,7 +209,7 @@ public class TransferenciasController : ControllerBase
                     SELECT id_usuario AS idUsuario FROM Usuarios
                     WHERE id_filial = @IdFilial
                       AND perfil IN ('ADMIN','OPERADOR')
-                      AND ativo = 1",
+                      AND ativo = true",
                     new { IdFilial = request.IdFilialDestino });
 
                 foreach (var op in operadores)
