@@ -45,8 +45,9 @@ public class ProdutosController : ControllerBase
                 p.criado_em AS criadoEm,
                 ef.qtd_atual AS saldo,
                 ef.qtd_minima AS estoqueMinimo,
-                (SELECT LIMIT 1 codigo_barras FROM Etiquetas
-                 WHERE id_produto = p.id_produto AND ativo = true) AS codigoEtiqueta
+                (SELECT codigo_barras FROM Etiquetas
+ WHERE id_produto = p.id_produto AND ativo = true
+ LIMIT 1) AS codigoEtiqueta
             FROM Produtos p
             LEFT JOIN Categorias c ON p.id_categoria = c.id_categoria
             LEFT JOIN Fornecedores f ON p.id_fornecedor = f.id_fornecedor
@@ -166,7 +167,7 @@ var codigoEtiqueta = $"ETQ-{sku}";
                      descricao, preco_custo, preco_venda, unidade, ativo, criado_em, IdEmpresa)
                 VALUES
                     (@IdCategoria, @IdFornecedor, @IdFilial, @Nome, @Sku,
-                     @Descricao, @PrecoCusto, @PrecoVenda, @Unidade, 1, GETDATE(), @IdEmpresa);
+                     @Descricao, @PrecoCusto, @PrecoVenda, @Unidade, true, NOW(), @IdEmpresa);
                 SELECT SCOPE_IDENTITY();",
                 new
                 {
@@ -185,14 +186,15 @@ var codigoEtiqueta = $"ETQ-{sku}";
             // Cria registro de estoque na filial com saldo 0
             await conn.ExecuteAsync(@"
                 IF NOT EXISTS (SELECT 1 FROM EstoqueFilial WHERE id_produto = @IdProduto AND id_filial = @IdFilial)
-                INSERT INTO EstoqueFilial (id_produto, id_filial, qtd_atual, qtd_minima)
-                VALUES (@IdProduto, @IdFilial, 0, 0)",
+               INSERT INTO EstoqueFilial (id_produto, id_filial, qtd_atual, qtd_minima)
+VALUES (@IdProduto, @IdFilial, 0, 0)
+ON CONFLICT (id_produto, id_filial) DO NOTHING;,
                 new { IdProduto = idProduto, produto.IdFilial });
 
 
 await conn.ExecuteAsync(@"
     INSERT INTO Etiquetas (id_produto, id_filial, codigo_barras, ativo)
-    VALUES (@IdProduto, @IdFilial, @CodigoBarras, 1)",
+    VALUES (@IdProduto, @IdFilial, @CodigoBarras, true)",
     new
     {
         IdProduto = idProduto,
