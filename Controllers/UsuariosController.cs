@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -29,14 +29,14 @@ public class UsuariosController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
         var usuarios = await conn.QueryAsync(@"
             SELECT
-                u.id_usuario AS idUsuario,
-                u.id_filial AS idFilial,
+                u.id_usuario AS ""idUsuario"",
+                u.id_filial AS ""idFilial"",
                 f.nome AS filial,
                 u.nome,
                 u.email,
                 u.perfil,
                 u.ativo,
-                u.criado_em AS criadoEm
+                u.criado_em AS ""criadoEm""
             FROM Usuarios u
             LEFT JOIN Filiais f ON u.id_filial = f.id_filial
             WHERE u.ativo = true
@@ -55,14 +55,14 @@ public class UsuariosController : ControllerBase
         
         var usuario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
-                u.id_usuario AS idUsuario,
-                u.id_filial AS idFilial,
+                u.id_usuario AS ""idUsuario"",
+                u.id_filial AS ""idFilial"",
                 f.nome AS filial,
                 u.nome,
                 u.email,
                 u.perfil,
                 u.ativo,
-                u.criado_em AS criadoEm
+                u.criado_em AS ""criadoEm""
             FROM Usuarios u
             LEFT JOIN Filiais f ON u.id_filial = f.id_filial
             WHERE u.id_usuario = @Id

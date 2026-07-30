@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -24,15 +24,15 @@ public class InventarioController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
 
         var inventario = await conn.QueryFirstOrDefaultAsync(@"
-            SELECT id_inventario AS idInventario,
+            SELECT id_inventario AS ""idInventario"",
                    status,
-                   data_programada AS dataProgramada,
-                   hora_inicio AS horaInicio,
-                   hora_fim AS horaFim
+                   data_programada AS ""dataProgramada"",
+                   hora_inicio AS ""horaInicio"",
+                   hora_fim AS ""horaFim""
             FROM Inventarios
             WHERE id_filial = @IdFilial
               AND status IN ('PROGRAMADO', 'EM_ANDAMENTO')
-              AND data_programada = CAST(GETDATE() AS DATE)
+              AND data_programada = CURRENT_DATE
             ORDER BY criado_em DESC",
             new { IdFilial = idFilial });
 
@@ -52,27 +52,27 @@ public class InventarioController : ControllerBase
         using var conn =new NpgsqlConnection(_connectionString);
         var inventarios = await conn.QueryAsync(@"
             SELECT
-                i.id_inventario AS idInventario,
-                i.id_filial AS idFilial,
+                i.id_inventario AS ""idInventario"",
+                i.id_filial AS ""idFilial"",
                 f.nome AS filial,
-                i.data_programada AS dataProgramada,
-                i.hora_inicio AS horaInicio,
-                i.hora_fim AS horaFim,
+                i.data_programada AS ""dataProgramada"",
+                i.hora_inicio AS ""horaInicio"",
+                i.hora_fim AS ""horaFim"",
                 i.status,
-                i.criado_em AS criadoEm,
-                i.aprovado_em AS aprovadoEm,
-                i.observacao_aprovador AS observacaoAprovador,
-                uc.nome AS nomeAprovador,
+                i.criado_em AS ""criadoEm"",
+                i.aprovado_em AS ""aprovadoEm"",
+                i.observacao_aprovador AS ""observacaoAprovador"",
+                uc.nome AS ""nomeAprovador"",
                 -- contagens
                 (SELECT COUNT(*) FROM InventarioFichas f2
-                 WHERE f2.id_inventario = i.id_inventario) AS totalFichas,
+                 WHERE f2.id_inventario = i.id_inventario) AS ""totalFichas"",
                 (SELECT COUNT(*) FROM InventarioFichas f2
                  WHERE f2.id_inventario = i.id_inventario
-                   AND f2.saldo_contado IS NOT NULL) AS fichasContadas,
+                   AND f2.saldo_contado IS NOT NULL) AS ""fichasContadas"",
                 (SELECT COUNT(*) FROM InventarioFichas f2
                  WHERE f2.id_inventario = i.id_inventario
                    AND f2.divergencia != 0
-                   AND f2.saldo_contado IS NOT NULL) AS fichasComDivergencia
+                   AND f2.saldo_contado IS NOT NULL) AS ""fichasComDivergencia""
             FROM Inventarios i
             INNER JOIN Filiais f ON i.id_filial = f.id_filial
             LEFT JOIN Usuarios uc ON i.id_usuario_aprovador = uc.id_usuario
@@ -105,9 +105,9 @@ public class InventarioController : ControllerBase
             (id_filial, data_programada, hora_inicio, hora_fim,
              status, id_usuario_criador)
             VALUES
-            (@IdFilial, @DataProgramada, @HoraInicio, @HoraFim,
-             'PROGRAMADO', @IdUsuarioCriador);
-            SELECT SCOPE_IDENTITY();",
+            (@IdFilial, @DataProgramada, @HoraInicio::time, @HoraFim::time,
+             'PROGRAMADO', @IdUsuarioCriador)
+            RETURNING id_inventario;",
             new
             {
                 request.IdFilial,
@@ -143,7 +143,7 @@ public class InventarioController : ControllerBase
             INSERT INTO InventarioFichas
             (id_inventario, id_prateleira, id_produto, saldo_sistema)
             SELECT @IdInventario, pp.id_prateleira, pp.id_produto,
-                   ISNULL(ef.qtd_atual, 0)
+                   COALESCE(ef.qtd_atual, 0)
             FROM ProdutoPrateleira pp
             INNER JOIN Prateleiras pr ON pr.id_prateleira = pp.id_prateleira
             LEFT JOIN EstoqueFilial ef ON ef.id_produto = pp.id_produto
@@ -170,8 +170,8 @@ public class InventarioController : ControllerBase
         using var conn =new NpgsqlConnection(_connectionString);
 
         var prateleira = await conn.QueryFirstOrDefaultAsync(@"
-            SELECT id_prateleira AS idPrateleira,
-                   descricao, codigo_barras AS codigoBarras
+            SELECT id_prateleira AS ""idPrateleira"",
+                   descricao, codigo_barras AS ""codigoBarras""
             FROM Prateleiras
             WHERE codigo_barras = @CodigoBarras",
             new { CodigoBarras = codigoBarras });
@@ -181,16 +181,17 @@ public class InventarioController : ControllerBase
 
         var fichas = await conn.QueryAsync(@"
             SELECT
-                f.id_ficha AS idFicha,
-                f.id_produto AS idProduto,
+                f.id_ficha AS ""idFicha"",
+                f.id_produto AS ""idProduto"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
-                f.saldo_sistema AS saldoSistema,
-                f.saldo_contado AS saldoContado,
+                f.saldo_sistema AS ""saldoSistema"",
+                f.saldo_contado AS ""saldoContado"",
                 f.divergencia,
-                (SELECT LIMIT 1 codigo_barras FROM Etiquetas
-                 WHERE id_produto = f.id_produto ORDER BY id_etiqueta DESC) AS codigoBarras
+                (SELECT codigo_barras FROM Etiquetas
+                 WHERE id_produto = f.id_produto
+                 ORDER BY id_etiqueta DESC LIMIT 1) AS ""codigoBarras""
             FROM InventarioFichas f
             INNER JOIN Produtos p ON f.id_produto = p.id_produto
             WHERE f.id_inventario = @IdInventario
@@ -287,7 +288,7 @@ public class InventarioController : ControllerBase
             SET status = 'APROVADO',
                 assinatura_base64 = @Assinatura,
                 observacao_aprovador = @Observacao,
-                aprovado_em = GETDATE()
+                aprovado_em = NOW()
             WHERE id_inventario = @Id",
             new
             {
@@ -333,8 +334,8 @@ foreach (var ficha in fichasContadas)
         VALUES
         (@IdProduto, @IdFilial, @IdPrateleira, @IdUsuario,
          @Tipo, @Quantidade, @SaldoApos,
-         'REPROCESSADO POR INVENTÁRIO #' + CAST(@IdInventario AS NVARCHAR),
-         0)",
+         'REPROCESSADO POR INVENTÁRIO #' || CAST(@IdInventario AS TEXT),
+         false)",
         new
         {
             IdProduto = (int)ficha.id_produto,
@@ -349,7 +350,7 @@ foreach (var ficha in fichasContadas)
 
     // Marca ficha como reprocessada
     await conn.ExecuteAsync(@"
-        UPDATE InventarioFichas SET reprocessado = 1
+        UPDATE InventarioFichas SET reprocessado = true
         WHERE id_ficha = @IdFicha",
         new { IdFicha = (int)ficha.id_ficha });
 }
@@ -378,7 +379,7 @@ return Ok(new
             UPDATE Inventarios
             SET status = 'REJEITADO',
                 observacao_aprovador = @Observacao,
-                aprovado_em = GETDATE()
+                aprovado_em = NOW()
             WHERE id_inventario = @Id",
             new { Observacao = request.Observacao, Id = id });
 
@@ -399,16 +400,16 @@ return Ok(new
 
         var inventario = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
-                i.id_inventario AS idInventario,
-                i.id_filial AS idFilial,
+                i.id_inventario AS ""idInventario"",
+                i.id_filial AS ""idFilial"",
                 f.nome AS filial,
-                i.data_programada AS dataProgramada,
+                i.data_programada AS ""dataProgramada"",
                 i.status,
-                i.criado_em AS criadoEm,
-                i.aprovado_em AS aprovadoEm,
-                i.assinatura_base64 AS assinaturaBase64,
-                i.observacao_aprovador AS observacaoAprovador,
-                ua.nome AS nomeAprovador
+                i.criado_em AS ""criadoEm"",
+                i.aprovado_em AS ""aprovadoEm"",
+                i.assinatura_base64 AS ""assinaturaBase64"",
+                i.observacao_aprovador AS ""observacaoAprovador"",
+                ua.nome AS ""nomeAprovador""
             FROM Inventarios i
             INNER JOIN Filiais f ON i.id_filial = f.id_filial
             LEFT JOIN Usuarios ua ON i.id_usuario_aprovador = ua.id_usuario
@@ -420,14 +421,14 @@ return Ok(new
         // Fichas agrupadas por prateleira
         var fichas = await conn.QueryAsync(@"
             SELECT
-                pr.codigo_barras AS codigoPrateleira,
-                pr.descricao AS descricaoPrateleira,
-                f.id_ficha AS idFicha,
+                pr.codigo_barras AS ""codigoPrateleira"",
+                pr.descricao AS ""descricaoPrateleira"",
+                f.id_ficha AS ""idFicha"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
-                f.saldo_sistema AS saldoSistema,
-                f.saldo_contado AS saldoContado,
+                f.saldo_sistema AS ""saldoSistema"",
+                f.saldo_contado AS ""saldoContado"",
                 f.divergencia,
                 f.reprocessado
             FROM InventarioFichas f

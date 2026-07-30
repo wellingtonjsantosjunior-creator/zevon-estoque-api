@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -24,7 +24,7 @@ public class FornecedoresController : ControllerBase
 
         var fornecedores = await conn.QueryAsync(@"
             SELECT
-                id_fornecedor AS idFornecedor,
+                id_fornecedor AS ""idFornecedor"",
                 nome,
                 telefone,
                 email

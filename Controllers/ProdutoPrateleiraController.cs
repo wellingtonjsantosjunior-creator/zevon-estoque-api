@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -28,13 +28,13 @@ public class ProdutoPrateleiraController : ControllerBase
         var vinculos = await conn.QueryAsync(@"
             SELECT
                 pp.id AS id,
-                pp.id_produto AS idProduto,
+                pp.id_produto AS ""idProduto"",
                 p.nome AS produto,
-                p.codigo_sku AS codigoSku,
-                pp.id_prateleira AS idPrateleira,
-                pr.codigo_barras AS codigoPrateleira,
+                p.codigo_sku AS ""codigoSku"",
+                pp.id_prateleira AS ""idPrateleira"",
+                pr.codigo_barras AS ""codigoPrateleira"",
                 pr.descricao AS prateleira,
-                pp.id_filial AS idFilial,
+                pp.id_filial AS ""idFilial"",
                 f.nome AS filial,
                 pp.posicao
             FROM ProdutoPrateleira pp

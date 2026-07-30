@@ -1,0 +1,13 @@
+# Artefatos de build locais — se forem copiados para a imagem, o obj/ antigo
+# (que ainda referencia Microsoft.Data.SqlClient) quebra o restore no Render.
+bin/
+obj/
+
+# Sobras do deploy antigo na Azure
+publish/
+publish_out/
+*.zip
+
+.vs/
+.vscode/
+*.user

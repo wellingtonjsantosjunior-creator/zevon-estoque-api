@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -36,19 +36,27 @@ public class EstoqueController : ControllerBase
         if (await FilialEmInventario(conn, request.IdFilial))
             return BadRequest("INVENTARIO_EM_ANDAMENTO");
 
-        var resultado = await conn.QueryFirstOrDefaultAsync(
-            "EXEC sp_EntradaEstoque @id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao",
-            new
-            {
-                id_produto = request.IdProduto,
-                id_filial = request.IdFilial,
-                id_prateleira = request.IdPrateleira,
-                id_usuario = request.IdUsuario,
-                quantidade = request.Quantidade,
-                observacao = request.Observacao
-            });
+        try
+        {
+            var resultado = await conn.QueryFirstOrDefaultAsync(
+                "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao)",
+                new
+                {
+                    id_produto = request.IdProduto,
+                    id_filial = request.IdFilial,
+                    id_prateleira = request.IdPrateleira,
+                    id_usuario = request.IdUsuario,
+                    quantidade = request.Quantidade,
+                    observacao = request.Observacao
+                });
 
-        return Ok(resultado);
+            return Ok(resultado);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "P0001")
+        {
+            // Regra de negócio levantada pela função (RAISE EXCEPTION)
+            return BadRequest(ex.MessageText);
+        }
     }
 
     [HttpPost("saida")]
@@ -64,19 +72,27 @@ public class EstoqueController : ControllerBase
         if (prateleira != null && await FilialEmInventario(conn, (int)prateleira.id_filial))
             return BadRequest("INVENTARIO_EM_ANDAMENTO");
 
-        var resultado = await conn.QueryFirstOrDefaultAsync(
-            "EXEC sp_SaidaPorPrateleira @codigo_prateleira, @id_produto, @id_usuario, @quantidade, @observacao, @id_requisicao",
-            new
-            {
-                codigo_prateleira = request.CodigoPrateleira,
-                id_produto = request.IdProduto,
-                id_usuario = request.IdUsuario,
-                quantidade = request.Quantidade,
-                observacao = request.Observacao,
-                id_requisicao = request.IdRequisicao
-            });
+        try
+        {
+            var resultado = await conn.QueryFirstOrDefaultAsync(
+                "SELECT * FROM sp_saida_por_prateleira(@codigo_prateleira, @id_produto, @id_usuario, @quantidade, @observacao, @id_requisicao)",
+                new
+                {
+                    codigo_prateleira = request.CodigoPrateleira,
+                    id_produto = request.IdProduto,
+                    id_usuario = request.IdUsuario,
+                    quantidade = request.Quantidade,
+                    observacao = request.Observacao,
+                    id_requisicao = request.IdRequisicao
+                });
 
-        return Ok(resultado);
+            return Ok(resultado);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "P0001")
+        {
+            // SALDO_INSUFICIENTE / PRATELEIRA_NAO_ENCONTRADA / QUANTIDADE_INVALIDA
+            return BadRequest(ex.MessageText);
+        }
     }
 
     [HttpGet("kardex")]
@@ -85,7 +101,7 @@ public class EstoqueController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
 
         var resultado = await conn.QueryAsync(
-            "EXEC sp_Kardex @id_filial, @id_produto, @data_inicio, @data_fim",
+            "SELECT * FROM sp_kardex(@id_filial, @id_produto, @data_inicio, @data_fim)",
             new
             {
                 id_filial = filtro.IdFilial,
@@ -104,9 +120,9 @@ public class EstoqueController : ControllerBase
 
         var resultado = await conn.QueryAsync(@"
             SELECT 
-                p.id_produto AS idProduto,
+                p.id_produto AS ""idProduto"",
                 p.nome AS produto,
-                p.codigo_sku AS codigoSku,
+                p.codigo_sku AS ""codigoSku"",
                 p.codigo_sku AS sku,
                 ef.qtd_atual AS saldo,
                 ef.qtd_minima AS minimo,
@@ -128,17 +144,17 @@ public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
     using var conn = new NpgsqlConnection(_connectionString);
 
     var resultado = await conn.QueryFirstOrDefaultAsync(@"
-        SELECT LIMIT 1
-            e.codigo_barras AS codigoEtiqueta,
-            p.id_produto AS idProduto,
+        SELECT
+            e.codigo_barras AS ""codigoEtiqueta"",
+            p.id_produto AS ""idProduto"",
             p.nome AS produto,
-            p.codigo_sku AS codigoSku,
+            p.codigo_sku AS ""codigoSku"",
             p.codigo_sku AS sku,
             ef.qtd_atual AS saldo,
-            f.id_filial AS idFilial,
+            f.id_filial AS ""idFilial"",
             f.nome AS filial,
-            pr.id_prateleira AS idPrateleira,
-            pr.codigo_barras AS codigoPrateleira,
+            pr.id_prateleira AS ""idPrateleira"",
+            pr.codigo_barras AS ""codigoPrateleira"",
             pr.descricao AS prateleira,
             pp.posicao
         FROM Etiquetas e
@@ -153,7 +169,8 @@ public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
         INNER JOIN Prateleiras pr ON pp.id_prateleira = pr.id_prateleira
         WHERE e.codigo_barras = @CodigoBarras 
           AND e.ativo = true
-          AND p.ativo = true",
+          AND p.ativo = true
+        LIMIT 1",
         new { CodigoBarras = codigoBarras });
 
     if (resultado == null)
@@ -170,13 +187,13 @@ public async Task<IActionResult> BuscarEtiqueta(string codigoBarras)
 
         var resultado = await conn.QueryAsync(@"
             SELECT 
-                p.id_produto AS idProduto,
+                p.id_produto AS ""idProduto"",
                 p.nome AS produto,
-                p.codigo_sku AS codigoSku,
+                p.codigo_sku AS ""codigoSku"",
                 p.codigo_sku AS sku,
                 ef.qtd_atual AS saldo,
                 pp.posicao,
-                pr.codigo_barras AS codigoPrateleira,
+                pr.codigo_barras AS ""codigoPrateleira"",
                 pr.descricao AS prateleira
             FROM Prateleiras pr
             INNER JOIN ProdutoPrateleira pp ON pr.id_prateleira = pp.id_prateleira

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -24,7 +24,7 @@ public class CategoriasController : ControllerBase
 
         var categorias = await conn.QueryAsync(@"
             SELECT
-                id_categoria AS idCategoria,
+                id_categoria AS ""idCategoria"",
                 nome,
                 descricao
             FROM Categorias

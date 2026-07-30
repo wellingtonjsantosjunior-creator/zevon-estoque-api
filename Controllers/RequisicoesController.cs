@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -30,27 +30,27 @@ public class RequisicoesController : ControllerBase
         // Busca todos os itens
         var itens = await conn.QueryAsync(@"
             SELECT
-                r.id_requisicao AS idRequisicao,
-                r.id_grupo AS idGrupo,
-                r.id_filial AS idFilial,
+                r.id_requisicao AS ""idRequisicao"",
+                r.id_grupo AS ""idGrupo"",
+                r.id_filial AS ""idFilial"",
                 f.nome AS filial,
-                r.id_usuario_solicitante AS idUsuarioSolicitante,
-                us.nome AS nomeSolicitante,
-                r.id_produto AS idProduto,
+                r.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                us.nome AS ""nomeSolicitante"",
+                r.id_produto AS ""idProduto"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
                 r.quantidade,
                 r.justificativa,
                 r.status,
-                r.data_retirada_prevista AS dataRetiradaPrevista,
-                r.id_usuario_atendente AS idUsuarioAtendente,
-                ua.nome AS nomeAtendente,
-                r.observacao_atendente AS observacaoAtendente,
-                r.valor_unitario AS valorUnitario,
-                r.valor_total AS valorTotal,
-                r.criado_em AS criadoEm,
-                r.atendido_em AS atendidoEm
+                r.data_retirada_prevista AS ""dataRetiradaPrevista"",
+                r.id_usuario_atendente AS ""idUsuarioAtendente"",
+                ua.nome AS ""nomeAtendente"",
+                r.observacao_atendente AS ""observacaoAtendente"",
+                r.valor_unitario AS ""valorUnitario"",
+                r.valor_total AS ""valorTotal"",
+                r.criado_em AS ""criadoEm"",
+                r.atendido_em AS ""atendidoEm""
             FROM Requisicoes r
             INNER JOIN Filiais f ON r.id_filial = f.id_filial
             INNER JOIN Usuarios us ON r.id_usuario_solicitante = us.id_usuario
@@ -112,27 +112,27 @@ public class RequisicoesController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
         var requisicao = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
-                r.id_requisicao AS idRequisicao,
-                r.id_grupo AS idGrupo,
-                r.id_filial AS idFilial,
+                r.id_requisicao AS ""idRequisicao"",
+                r.id_grupo AS ""idGrupo"",
+                r.id_filial AS ""idFilial"",
                 f.nome AS filial,
-                r.id_usuario_solicitante AS idUsuarioSolicitante,
-                us.nome AS nomeSolicitante,
-                r.id_produto AS idProduto,
+                r.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                us.nome AS ""nomeSolicitante"",
+                r.id_produto AS ""idProduto"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
                 r.quantidade,
                 r.justificativa,
                 r.status,
-                r.data_retirada_prevista AS dataRetiradaPrevista,
-                r.id_usuario_atendente AS idUsuarioAtendente,
-                ua.nome AS nomeAtendente,
-                r.observacao_atendente AS observacaoAtendente,
-                r.valor_unitario AS valorUnitario,
-                r.valor_total AS valorTotal,
-                r.criado_em AS criadoEm,
-                r.atendido_em AS atendidoEm
+                r.data_retirada_prevista AS ""dataRetiradaPrevista"",
+                r.id_usuario_atendente AS ""idUsuarioAtendente"",
+                ua.nome AS ""nomeAtendente"",
+                r.observacao_atendente AS ""observacaoAtendente"",
+                r.valor_unitario AS ""valorUnitario"",
+                r.valor_total AS ""valorTotal"",
+                r.criado_em AS ""criadoEm"",
+                r.atendido_em AS ""atendidoEm""
             FROM Requisicoes r
             INNER JOIN Filiais f ON r.id_filial = f.id_filial
             INNER JOIN Usuarios us ON r.id_usuario_solicitante = us.id_usuario
@@ -179,8 +179,8 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
         VALUES
         (@IdFilial, @IdUsuarioSolicitante, @IdProduto, @Quantidade,
          @Justificativa, 'PENDENTE', @DataRetiradaPrevista,
-         @ValorUnitario, @ValorTotal, @IdGrupo);
-        SELECT SCOPE_IDENTITY();",
+         @ValorUnitario, @ValorTotal, @IdGrupo)
+        RETURNING id_requisicao;",
         new
         {
             request.IdFilial,
@@ -218,8 +218,8 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
         using var conn = new NpgsqlConnection(_connectionString);
 
         var requisicao = await conn.QueryFirstOrDefaultAsync(@"
-            SELECT r.*, u.fcm_token AS fcmTokenSolicitante,
-                   r.id_usuario_solicitante AS idUsuarioSolicitante
+            SELECT r.*, u.fcm_token AS ""fcmTokenSolicitante"",
+                   r.id_usuario_solicitante AS ""idUsuarioSolicitante""
             FROM Requisicoes r
             INNER JOIN Usuarios u ON r.id_usuario_solicitante = u.id_usuario
             WHERE r.id_requisicao = @Id",
@@ -256,9 +256,9 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
 
         // Busca todos os itens do grupo
         var itens = await conn.QueryAsync(@"
-            SELECT r.id_requisicao AS idRequisicao,
-                   r.id_usuario_solicitante AS idUsuarioSolicitante,
-                   u.fcm_token AS fcmTokenSolicitante
+            SELECT r.id_requisicao AS ""idRequisicao"",
+                   r.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                   u.fcm_token AS ""fcmTokenSolicitante""
             FROM Requisicoes r
             INNER JOIN Usuarios u ON r.id_usuario_solicitante = u.id_usuario
             WHERE r.id_grupo = @IdGrupo",
@@ -339,7 +339,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
         NpgsqlConnection conn, int idFilial, string titulo, string corpo)
     {
         var operadores = await conn.QueryAsync<dynamic>(@"
-            SELECT id_usuario AS idUsuario, fcm_token AS fcmToken
+            SELECT id_usuario AS ""idUsuario"", fcm_token AS ""fcmToken""
             FROM Usuarios
             WHERE id_filial = @IdFilial
               AND perfil IN ('ADMIN', 'OPERADOR')

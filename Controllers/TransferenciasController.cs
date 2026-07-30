@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -37,30 +37,30 @@ public class TransferenciasController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
         var itens = await conn.QueryAsync(@"
             SELECT
-                t.id_transferencia AS idTransferencia,
-                t.id_grupo AS idGrupo,
-                t.id_filial_origem AS idFilialOrigem,
-                fo.nome AS filialOrigem,
-                t.id_filial_destino AS idFilialDestino,
-                fd.nome AS filialDestino,
-                t.id_produto AS idProduto,
+                t.id_transferencia AS ""idTransferencia"",
+                t.id_grupo AS ""idGrupo"",
+                t.id_filial_origem AS ""idFilialOrigem"",
+                fo.nome AS ""filialOrigem"",
+                t.id_filial_destino AS ""idFilialDestino"",
+                fd.nome AS ""filialDestino"",
+                t.id_produto AS ""idProduto"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
-                t.id_prateleira_origem AS idPrateleiraOrigem,
-                pro.codigo_barras AS codigoPrateleiraOrigem,
-                pro.descricao AS descricaoPrateleiraOrigem,
-                t.id_prateleira_destino AS idPrateleiraDestino,
-                prd.codigo_barras AS codigoPrateleiraDestino,
-                t.id_usuario_solicitante AS idUsuarioSolicitante,
-                us.nome AS nomeSolicitante,
-                t.id_usuario_recebedor AS idUsuarioRecebedor,
-                ur.nome AS nomeRecebedor,
+                t.id_prateleira_origem AS ""idPrateleiraOrigem"",
+                pro.codigo_barras AS ""codigoPrateleiraOrigem"",
+                pro.descricao AS ""descricaoPrateleiraOrigem"",
+                t.id_prateleira_destino AS ""idPrateleiraDestino"",
+                prd.codigo_barras AS ""codigoPrateleiraDestino"",
+                t.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                us.nome AS ""nomeSolicitante"",
+                t.id_usuario_recebedor AS ""idUsuarioRecebedor"",
+                ur.nome AS ""nomeRecebedor"",
                 t.quantidade,
                 t.status,
                 t.observacao,
-                t.criado_em AS criadoEm,
-                t.recebido_em AS recebidoEm
+                t.criado_em AS ""criadoEm"",
+                t.recebido_em AS ""recebidoEm""
             FROM Transferencias t
             INNER JOIN Filiais fo ON t.id_filial_origem = fo.id_filial
             INNER JOIN Filiais fd ON t.id_filial_destino = fd.id_filial
@@ -148,7 +148,7 @@ public class TransferenciasController : ControllerBase
 
             // Registra saída via SP
             await conn.ExecuteAsync(
-                "EXEC sp_SaidaPorPrateleira @codigo_prateleira, @id_produto, @id_usuario, @quantidade, @observacao, @id_requisicao",
+                "SELECT * FROM sp_saida_por_prateleira(@codigo_prateleira, @id_produto, @id_usuario, @quantidade, @observacao, @id_requisicao)",
                 new
                 {
                     codigo_prateleira = request.CodigoPrateleiraOrigem,
@@ -165,12 +165,13 @@ public class TransferenciasController : ControllerBase
                 SET tipo = 'TRANSFERENCIA_SAIDA',
                     observacao = @Obs
                 WHERE id_movimentacao = (
-                    SELECT LIMIT 1 id_movimentacao
+                    SELECT id_movimentacao
                     FROM Movimentacoes
                     WHERE id_produto = @IdProduto
                       AND id_filial = @IdFilialOrigem
                       AND tipo = 'SAIDA'
                     ORDER BY data_hora DESC
+                    LIMIT 1
                 )",
                 new
                 {
@@ -188,8 +189,8 @@ public class TransferenciasController : ControllerBase
                 VALUES
                 (@IdFilialOrigem, @IdFilialDestino, @IdProduto,
                  @IdPrateleiraOrigem, @IdUsuarioSolicitante, @Quantidade,
-                 'AGUARDANDO', @Observacao, @IdGrupo);
-                SELECT SCOPE_IDENTITY();",
+                 'AGUARDANDO', @Observacao, @IdGrupo)
+                RETURNING id_transferencia;",
                 new
                 {
                     request.IdFilialOrigem,
@@ -206,7 +207,7 @@ public class TransferenciasController : ControllerBase
             if (request.PrimeiroDoGrupo)
             {
                 var operadores = await conn.QueryAsync<dynamic>(@"
-                    SELECT id_usuario AS idUsuario FROM Usuarios
+                    SELECT id_usuario AS ""idUsuario"" FROM Usuarios
                     WHERE id_filial = @IdFilial
                       AND perfil IN ('ADMIN','OPERADOR')
                       AND ativo = true",
@@ -233,6 +234,11 @@ public class TransferenciasController : ControllerBase
                 mensagem = "Transferência criada com sucesso."
             });
         }
+        catch (PostgresException ex) when (ex.SqlState == "P0001")
+        {
+            // SALDO_INSUFICIENTE / PRATELEIRA_NAO_ENCONTRADA / QUANTIDADE_INVALIDA
+            return BadRequest(ex.MessageText);
+        }
         catch (Exception ex)
         {
             return StatusCode(500, new { erro = ex.Message, detalhes = ex.InnerException?.Message });
@@ -246,23 +252,23 @@ public class TransferenciasController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
         var itens = await conn.QueryAsync(@"
             SELECT
-                t.id_transferencia AS idTransferencia,
-                t.id_grupo AS idGrupo,
-                t.id_filial_origem AS idFilialOrigem,
-                fo.nome AS filialOrigem,
-                t.id_filial_destino AS idFilialDestino,
-                fd.nome AS filialDestino,
-                t.id_produto AS idProduto,
+                t.id_transferencia AS ""idTransferencia"",
+                t.id_grupo AS ""idGrupo"",
+                t.id_filial_origem AS ""idFilialOrigem"",
+                fo.nome AS ""filialOrigem"",
+                t.id_filial_destino AS ""idFilialDestino"",
+                fd.nome AS ""filialDestino"",
+                t.id_produto AS ""idProduto"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
-                t.id_prateleira_origem AS idPrateleiraOrigem,
-                pro.codigo_barras AS codigoPrateleiraOrigem,
-                t.id_usuario_solicitante AS idUsuarioSolicitante,
-                us.nome AS nomeSolicitante,
+                t.id_prateleira_origem AS ""idPrateleiraOrigem"",
+                pro.codigo_barras AS ""codigoPrateleiraOrigem"",
+                t.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                us.nome AS ""nomeSolicitante"",
                 t.quantidade,
                 t.status,
-                t.criado_em AS criadoEm
+                t.criado_em AS ""criadoEm""
             FROM Transferencias t
             INNER JOIN Filiais fo ON t.id_filial_origem = fo.id_filial
             INNER JOIN Filiais fd ON t.id_filial_destino = fd.id_filial
@@ -307,23 +313,23 @@ public class TransferenciasController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
         var result = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
-                t.id_transferencia AS idTransferencia,
-                t.id_grupo AS idGrupo,
-                t.id_filial_origem AS idFilialOrigem,
-                fo.nome AS filialOrigem,
-                t.id_filial_destino AS idFilialDestino,
-                fd.nome AS filialDestino,
-                t.id_produto AS idProduto,
+                t.id_transferencia AS ""idTransferencia"",
+                t.id_grupo AS ""idGrupo"",
+                t.id_filial_origem AS ""idFilialOrigem"",
+                fo.nome AS ""filialOrigem"",
+                t.id_filial_destino AS ""idFilialDestino"",
+                fd.nome AS ""filialDestino"",
+                t.id_produto AS ""idProduto"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
-                t.id_prateleira_origem AS idPrateleiraOrigem,
-                pro.codigo_barras AS codigoPrateleiraOrigem,
-                t.id_usuario_solicitante AS idUsuarioSolicitante,
-                us.nome AS nomeSolicitante,
+                t.id_prateleira_origem AS ""idPrateleiraOrigem"",
+                pro.codigo_barras AS ""codigoPrateleiraOrigem"",
+                t.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                us.nome AS ""nomeSolicitante"",
                 t.quantidade,
                 t.status,
-                t.criado_em AS criadoEm
+                t.criado_em AS ""criadoEm""
             FROM Transferencias t
             INNER JOIN Filiais fo ON t.id_filial_origem = fo.id_filial
             INNER JOIN Filiais fd ON t.id_filial_destino = fd.id_filial
@@ -345,11 +351,11 @@ public class TransferenciasController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
 
         var itens = await conn.QueryAsync(@"
-            SELECT t.id_transferencia AS idTransferencia,
-                   t.id_produto AS idProduto,
+            SELECT t.id_transferencia AS ""idTransferencia"",
+                   t.id_produto AS ""idProduto"",
                    t.quantidade,
-                   t.id_usuario_solicitante AS idUsuarioSolicitante,
-                   fo.nome AS filialOrigem
+                   t.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                   fo.nome AS ""filialOrigem""
             FROM Transferencias t
             INNER JOIN Filiais fo ON t.id_filial_origem = fo.id_filial
             WHERE t.id_grupo = @IdGrupo AND t.status = 'AGUARDANDO'",
@@ -371,7 +377,7 @@ public class TransferenciasController : ControllerBase
 
             // Registra entrada via SP
             await conn.ExecuteAsync(
-                "EXEC sp_EntradaEstoque @id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao",
+                "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao)",
                 new
                 {
                     id_produto = (int)item.idProduto,
@@ -388,12 +394,13 @@ public class TransferenciasController : ControllerBase
                 SET tipo = 'TRANSFERENCIA_ENTRADA',
                     observacao = @Obs
                 WHERE id_movimentacao = (
-                    SELECT LIMIT 1 id_movimentacao
+                    SELECT id_movimentacao
                     FROM Movimentacoes
                     WHERE id_produto = @IdProduto
                       AND id_filial = @IdFilial
                       AND tipo = 'ENTRADA'
                     ORDER BY data_hora DESC
+                    LIMIT 1
                 )",
                 new
                 {
@@ -408,7 +415,7 @@ public class TransferenciasController : ControllerBase
                 SET status = 'RECEBIDO',
                     id_prateleira_destino = @IdPrateleiraDestino,
                     id_usuario_recebedor = @IdUsuarioRecebedor,
-                    recebido_em = GETDATE()
+                    recebido_em = NOW()
                 WHERE id_transferencia = @IdTransferencia",
                 new
                 {
@@ -441,7 +448,7 @@ public class TransferenciasController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
 
         var transferencia = await conn.QueryFirstOrDefaultAsync(@"
-            SELECT t.*, pr.id_filial AS idFilialOrigem, fo.nome AS filialOrigem
+            SELECT t.*, pr.id_filial AS ""idFilialOrigem"", fo.nome AS ""filialOrigem""
             FROM Transferencias t
             INNER JOIN Prateleiras pr ON t.id_prateleira_origem = pr.id_prateleira
             INNER JOIN Filiais fo ON t.id_filial_origem = fo.id_filial
@@ -455,7 +462,7 @@ public class TransferenciasController : ControllerBase
             return BadRequest("INVENTARIO_EM_ANDAMENTO_DESTINO");
 
         await conn.ExecuteAsync(
-            "EXEC sp_EntradaEstoque @id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao",
+            "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao)",
             new
             {
                 id_produto = (int)transferencia.id_produto,
@@ -471,12 +478,13 @@ public class TransferenciasController : ControllerBase
             SET tipo = 'TRANSFERENCIA_ENTRADA',
                 observacao = @Obs
             WHERE id_movimentacao = (
-                SELECT LIMIT 1 id_movimentacao
+                SELECT id_movimentacao
                 FROM Movimentacoes
                 WHERE id_produto = @IdProduto
                   AND id_filial = @IdFilial
                   AND tipo = 'ENTRADA'
                 ORDER BY data_hora DESC
+                    LIMIT 1
             )",
             new
             {
@@ -490,7 +498,7 @@ public class TransferenciasController : ControllerBase
             SET status = 'RECEBIDO',
                 id_prateleira_destino = @IdPrateleiraDestino,
                 id_usuario_recebedor = @IdUsuarioRecebedor,
-                recebido_em = GETDATE()
+                recebido_em = NOW()
             WHERE id_transferencia = @Id",
             new
             {

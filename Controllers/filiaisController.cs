@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -36,14 +36,14 @@ public class FiliaisController : ControllerBase
 
         var filiais = await conn.QueryAsync(@"
             SELECT
-                id_filial  AS idFilial,
+                id_filial  AS ""idFilial"",
                 nome,
                 cnpj,
                 endereco,
                 cidade,
                 ativo,
-                criado_em  AS criadoEm,
-                IdEmpresa  AS idEmpresa
+                criado_em  AS ""criadoEm"",
+                IdEmpresa  AS ""idEmpresa""
             FROM Filiais
             WHERE ativo IS TRUE
               AND IdEmpresa = @IdEmpresa

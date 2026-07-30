@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -24,10 +24,10 @@ public class PrateleirasController : ControllerBase
 
         var prateleiras = await conn.QueryAsync(@"
             SELECT
-                p.id_prateleira AS idPrateleira,
-                p.id_filial AS idFilial,
+                p.id_prateleira AS ""idPrateleira"",
+                p.id_filial AS ""idFilial"",
                 f.nome AS filial,
-                p.codigo_barras AS codigoBarras,
+                p.codigo_barras AS ""codigoBarras"",
                 p.descricao,
                 p.corredor,
                 p.nivel,
@@ -50,7 +50,7 @@ public class PrateleirasController : ControllerBase
             INSERT INTO Prateleiras
             (id_filial, codigo_barras, descricao, corredor, nivel, ativo)
             VALUES
-            (@IdFilial, @CodigoBarras, @Descricao, @Corredor, @Nivel, 1)",
+            (@IdFilial, @CodigoBarras, @Descricao, @Corredor, @Nivel, true)",
             prateleira);
 
         return Ok("Prateleira cadastrada com sucesso.");

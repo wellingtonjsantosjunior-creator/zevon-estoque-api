@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -28,32 +28,32 @@ public async Task<IActionResult> Listar(
         using var conn = new NpgsqlConnection(_connectionString);
         var result = await conn.QueryAsync(@"
             SELECT
-                sc.id_solicitacao AS idSolicitacao,
-                sc.id_filial AS idFilial,
+                sc.id_solicitacao AS ""idSolicitacao"",
+                sc.id_filial AS ""idFilial"",
                 f.nome AS filial,
-                sc.id_produto AS idProduto,
+                sc.id_produto AS ""idProduto"",
                 p.nome AS produto,
                 p.codigo_sku AS sku,
                 p.unidade,
-                ef.qtd_atual AS saldoAtual,
-                ef.qtd_minima AS saldoMinimo,
-                sc.id_usuario_solicitante AS idUsuarioSolicitante,
-                us.nome AS nomeSolicitante,
-                sc.id_usuario_aprovador AS idUsuarioAprovador,
-                ua.nome AS nomeAprovador,
-                sc.id_fornecedor AS idFornecedor,
-                fo.nome AS nomeFornecedor,
+                ef.qtd_atual AS ""saldoAtual"",
+                ef.qtd_minima AS ""saldoMinimo"",
+                sc.id_usuario_solicitante AS ""idUsuarioSolicitante"",
+                us.nome AS ""nomeSolicitante"",
+                sc.id_usuario_aprovador AS ""idUsuarioAprovador"",
+                ua.nome AS ""nomeAprovador"",
+                sc.id_fornecedor AS ""idFornecedor"",
+                fo.nome AS ""nomeFornecedor"",
                 sc.quantidade,
-                sc.quantidade_sugerida AS quantidadeSugerida,
+                sc.quantidade_sugerida AS ""quantidadeSugerida"",
                 sc.urgencia,
                 sc.status,
                 sc.origem,
                 sc.observacao,
-                sc.observacao_aprovador AS observacaoAprovador,
-                sc.numero_protheus AS numeroProtheus,
-                sc.criado_em AS criadoEm,
-                sc.aprovado_em AS aprovadoEm,
-                sc.concluido_em AS concluidoEm
+                sc.observacao_aprovador AS ""observacaoAprovador"",
+                sc.numero_protheus AS ""numeroProtheus"",
+                sc.criado_em AS ""criadoEm"",
+                sc.aprovado_em AS ""aprovadoEm"",
+                sc.concluido_em AS ""concluidoEm""
             FROM SolicitacoesCompra sc
             INNER JOIN Filiais f ON sc.id_filial = f.id_filial
             INNER JOIN Produtos p ON sc.id_produto = p.id_produto
@@ -90,10 +90,10 @@ public async Task<IActionResult> Listar(
         // Busca produtos abaixo do mínimo que não têm sugestão ativa
         var produtosAbaixo = await conn.QueryAsync(@"
             SELECT
-                ef.id_produto AS idProduto,
+                ef.id_produto AS ""idProduto"",
                 p.nome AS produto,
-                ef.qtd_atual AS saldoAtual,
-                ef.qtd_minima AS saldoMinimo,
+                ef.qtd_atual AS ""saldoAtual"",
+                ef.qtd_minima AS ""saldoMinimo"",
                 ef.qtd_minima - ef.qtd_atual AS quantidade
             FROM EstoqueFilial ef
             INNER JOIN Produtos p ON ef.id_produto = p.id_produto
@@ -154,8 +154,8 @@ public async Task<IActionResult> Listar(
              quantidade, quantidade_sugerida, urgencia, status, origem, observacao)
             VALUES
             (@IdFilial, @IdProduto, @IdUsuarioSolicitante, @IdFornecedor,
-             @Quantidade, @Quantidade, @Urgencia, 'PENDENTE', 'MANUAL', @Observacao);
-            SELECT SCOPE_IDENTITY();",
+             @Quantidade, @Quantidade, @Urgencia, 'PENDENTE', 'MANUAL', @Observacao)
+            RETURNING id_solicitacao;",
             new
             {
                 request.IdFilial,
@@ -224,7 +224,7 @@ public async Task<IActionResult> Listar(
         using var conn = new NpgsqlConnection(_connectionString);
 
         var sol = await conn.QueryFirstOrDefaultAsync(@"
-            SELECT sc.*, u.id_usuario AS idSolicitante
+            SELECT sc.*, u.id_usuario AS ""idSolicitante""
             FROM SolicitacoesCompra sc
             LEFT JOIN Usuarios u ON sc.id_usuario_solicitante = u.id_usuario
             WHERE sc.id_solicitacao = @Id",
@@ -237,7 +237,7 @@ public async Task<IActionResult> Listar(
             SET status = 'APROVADO',
                 id_usuario_aprovador = @IdAprovador,
                 observacao_aprovador = @Observacao,
-                aprovado_em = GETDATE()
+                aprovado_em = NOW()
             WHERE id_solicitacao = @Id",
             new
             {
@@ -280,7 +280,7 @@ public async Task<IActionResult> Listar(
             UPDATE SolicitacoesCompra
             SET status = 'REJEITADO',
                 observacao_aprovador = @Observacao,
-                aprovado_em = GETDATE()
+                aprovado_em = NOW()
             WHERE id_solicitacao = @Id",
             new { request.Observacao, Id = id });
 
@@ -311,7 +311,7 @@ public async Task<IActionResult> Listar(
             UPDATE SolicitacoesCompra
             SET status = 'CONCLUIDO',
                 numero_protheus = @NumeroProtheus,
-                concluido_em = GETDATE()
+                concluido_em = NOW()
             WHERE id_solicitacao = @Id
               AND status = 'APROVADO'",
             new { request.NumeroProtheus, Id = id });
@@ -339,7 +339,7 @@ public async Task<IActionResult> Listar(
         NpgsqlConnection conn, int idFilial, int idSolicitacao)
     {
         var aprovadores = await conn.QueryAsync<dynamic>(@"
-            SELECT id_usuario AS idUsuario FROM Usuarios
+            SELECT id_usuario AS ""idUsuario"" FROM Usuarios
             WHERE id_filial = @IdFilial
               AND perfil IN ('ADMIN')
               AND ativo = true",

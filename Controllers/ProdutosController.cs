@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -28,26 +28,26 @@ public class ProdutosController : ControllerBase
 
         var produtos = await conn.QueryAsync(@"
             SELECT
-                p.id_produto AS idProduto,
-                p.id_categoria AS idCategoria,
+                p.id_produto AS ""idProduto"",
+                p.id_categoria AS ""idCategoria"",
                 c.nome AS categoria,
-                p.id_fornecedor AS idFornecedor,
+                p.id_fornecedor AS ""idFornecedor"",
                 f.nome AS fornecedor,
-                p.id_filial AS idFilial,
+                p.id_filial AS ""idFilial"",
                 p.nome,
-                p.codigo_sku AS codigoSku,
+                p.codigo_sku AS ""codigoSku"",
                 p.codigo_sku AS sku,
                 p.descricao,
-                p.preco_custo AS precoCusto,
-                p.preco_venda AS precoVenda,
+                p.preco_custo AS ""precoCusto"",
+                p.preco_venda AS ""precoVenda"",
                 p.unidade,
                 p.ativo,
-                p.criado_em AS criadoEm,
+                p.criado_em AS ""criadoEm"",
                 ef.qtd_atual AS saldo,
-                ef.qtd_minima AS estoqueMinimo,
+                ef.qtd_minima AS ""estoqueMinimo"",
                 (SELECT codigo_barras FROM Etiquetas
  WHERE id_produto = p.id_produto AND ativo = true
- LIMIT 1) AS codigoEtiqueta
+ LIMIT 1) AS ""codigoEtiqueta""
             FROM Produtos p
             LEFT JOIN Categorias c ON p.id_categoria = c.id_categoria
             LEFT JOIN Fornecedores f ON p.id_fornecedor = f.id_fornecedor
@@ -70,22 +70,22 @@ public class ProdutosController : ControllerBase
 
         var produto = await conn.QueryFirstOrDefaultAsync(@"
             SELECT
-                p.id_produto AS idProduto,
-                p.id_categoria AS idCategoria,
-                p.id_fornecedor AS idFornecedor,
-                p.id_filial AS idFilial,
+                p.id_produto AS ""idProduto"",
+                p.id_categoria AS ""idCategoria"",
+                p.id_fornecedor AS ""idFornecedor"",
+                p.id_filial AS ""idFilial"",
                 p.nome,
-                p.codigo_sku AS codigoSku,
+                p.codigo_sku AS ""codigoSku"",
                 p.codigo_sku AS sku,
                 p.descricao,
-                p.preco_custo AS precoCusto,
-                p.preco_venda AS precoVenda,
+                p.preco_custo AS ""precoCusto"",
+                p.preco_venda AS ""precoVenda"",
                 p.unidade,
                 p.ativo,
-                p.criado_em AS criadoEm,
+                p.criado_em AS ""criadoEm"",
                 (SELECT codigo_barras FROM Etiquetas
  WHERE id_produto = p.id_produto AND ativo = true
- LIMIT 1) AS codigoEtiqueta
+ LIMIT 1) AS ""codigoEtiqueta""
             FROM Produtos p
             WHERE p.id_produto = @Id
               AND p.IdEmpresa = @IdEmpresa",
@@ -167,8 +167,8 @@ var codigoEtiqueta = $"ETQ-{sku}";
                      descricao, preco_custo, preco_venda, unidade, ativo, criado_em, IdEmpresa)
                 VALUES
                     (@IdCategoria, @IdFornecedor, @IdFilial, @Nome, @Sku,
-                     @Descricao, @PrecoCusto, @PrecoVenda, @Unidade, true, NOW(), @IdEmpresa);
-                SELECT SCOPE_IDENTITY();",
+                     @Descricao, @PrecoCusto, @PrecoVenda, @Unidade, true, NOW(), @IdEmpresa)
+                RETURNING id_produto;",
                 new
                 {
                     produto.IdCategoria,
@@ -185,10 +185,12 @@ var codigoEtiqueta = $"ETQ-{sku}";
 
             // Cria registro de estoque na filial com saldo 0
             await conn.ExecuteAsync(@"
-                IF NOT EXISTS (SELECT 1 FROM EstoqueFilial WHERE id_produto = @IdProduto AND id_filial = @IdFilial)
-               INSERT INTO EstoqueFilial (id_produto, id_filial, qtd_atual, qtd_minima)
-VALUES (@IdProduto, @IdFilial, 0, 0)
-ON CONFLICT (id_produto, id_filial) DO NOTHING;,
+                INSERT INTO EstoqueFilial (id_produto, id_filial, qtd_atual, qtd_minima)
+                SELECT @IdProduto, @IdFilial, 0, 0
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM EstoqueFilial
+                    WHERE id_produto = @IdProduto AND id_filial = @IdFilial
+                )",
                 new { IdProduto = idProduto, produto.IdFilial });
 
 
@@ -198,7 +200,7 @@ await conn.ExecuteAsync(@"
     new
     {
         IdProduto = idProduto,
-        produto.IdFilial,
+        IdFilial = produto.IdFilial,
         CodigoBarras = codigoEtiqueta
     });
 
@@ -258,10 +260,10 @@ await conn.ExecuteAsync(@"
 
         var result = await conn.QueryAsync(@"
             SELECT
-                pr.id_prateleira AS idPrateleira,
+                pr.id_prateleira AS ""idPrateleira"",
                 pr.descricao,
-                pr.codigo_barras AS codigoBarras,
-                pr.id_filial AS idFilial
+                pr.codigo_barras AS ""codigoBarras"",
+                pr.id_filial AS ""idFilial""
             FROM ProdutoPrateleira pp
             INNER JOIN Prateleiras pr ON pr.id_prateleira = pp.id_prateleira
             INNER JOIN Produtos p ON p.id_produto = pp.id_produto

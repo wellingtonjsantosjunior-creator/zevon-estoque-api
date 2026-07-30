@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
+using System.Security.Claims;
 
 namespace ZevonEstoque.Controllers;
 
@@ -17,6 +18,9 @@ public class MovimentacoesController : ControllerBase
         _connectionString = connectionString;
     }
 
+    private int GetIdUsuario() =>
+        int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : 0;
+
     // =========================================
     // ENTRADA
     // =========================================
@@ -24,72 +28,32 @@ public class MovimentacoesController : ControllerBase
     [HttpPost("entrada")]
     public async Task<IActionResult> Entrada([FromBody] MovimentacaoRequest request)
     {
-        using var conn =new NpgsqlConnection(_connectionString);
+        var quantidade = (int)Math.Round(request.Quantidade);
+        if (quantidade <= 0)
+            return BadRequest("Quantidade invalida.");
 
-        var saldoAtual = await conn.QueryFirstOrDefaultAsync<decimal?>(@"
-            SELECT quantidade
-            FROM EstoqueSaldo
-            WHERE id_produto = @IdProduto
-              AND id_filial = @IdFilial",
-            new
-            {
-                request.IdProduto,
-                request.IdFilial
-            });
+        using var conn = new NpgsqlConnection(_connectionString);
 
-        if (saldoAtual == null)
+        try
         {
-            await conn.ExecuteAsync(@"
-                INSERT INTO EstoqueSaldo
-                (id_produto, id_filial, quantidade)
-                VALUES
-                (@IdProduto, @IdFilial, @Quantidade)",
+            var resultado = await conn.QueryFirstOrDefaultAsync(
+                "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao)",
                 new
                 {
-                    request.IdProduto,
-                    request.IdFilial,
-                    request.Quantidade
+                    id_produto = request.IdProduto,
+                    id_filial = request.IdFilial,
+                    id_prateleira = request.IdPrateleira,
+                    id_usuario = request.IdUsuario ?? GetIdUsuario(),
+                    quantidade,
+                    observacao = request.Observacao
                 });
+
+            return Ok(resultado);
         }
-        else
+        catch (PostgresException ex) when (ex.SqlState == "P0001")
         {
-            await conn.ExecuteAsync(@"
-                UPDATE EstoqueSaldo
-                SET quantidade = quantidade + @Quantidade
-                WHERE id_produto = @IdProduto
-                  AND id_filial = @IdFilial",
-                new
-                {
-                    request.IdProduto,
-                    request.IdFilial,
-                    request.Quantidade
-                });
+            return BadRequest(ex.MessageText);
         }
-
-        await conn.ExecuteAsync(@"
-            INSERT INTO MovimentacoesEstoque
-            (
-                tipo,
-                id_produto,
-                id_filial,
-                quantidade,
-                observacao,
-                usuario,
-                data_movimentacao
-            )
-            VALUES
-            (
-                'ENTRADA',
-                @IdProduto,
-                @IdFilial,
-                @Quantidade,
-                @Observacao,
-                @Usuario,
-                GETDATE()
-            )",
-            request);
-
-        return Ok("Entrada registrada com sucesso.");
     }
 
     // =========================================
@@ -99,60 +63,92 @@ public class MovimentacoesController : ControllerBase
     [HttpPost("saida")]
     public async Task<IActionResult> Saida([FromBody] MovimentacaoRequest request)
     {
-        using var conn =new NpgsqlConnection(_connectionString);
+        var quantidade = (int)Math.Round(request.Quantidade);
+        if (quantidade <= 0)
+            return BadRequest("Quantidade invalida.");
 
-        var saldoAtual = await conn.QueryFirstOrDefaultAsync<decimal?>(@"
-            SELECT quantidade
-            FROM EstoqueSaldo
-            WHERE id_produto = @IdProduto
-              AND id_filial = @IdFilial",
-            new
-            {
-                request.IdProduto,
-                request.IdFilial
-            });
+        using var conn = new NpgsqlConnection(_connectionString);
 
-        if (saldoAtual == null || saldoAtual < request.Quantidade)
+        // Quando a prateleira é informada por código de barras, usa a rotina de baixa
+        // por prateleira (mesma regra da tela de coletor).
+        if (!string.IsNullOrWhiteSpace(request.CodigoPrateleira))
         {
-            return BadRequest("Saldo insuficiente.");
+            try
+            {
+                var porPrateleira = await conn.QueryFirstOrDefaultAsync(
+                    "SELECT * FROM sp_saida_por_prateleira(@codigo_prateleira, @id_produto, @id_usuario, @quantidade, @observacao, @id_requisicao)",
+                    new
+                    {
+                        codigo_prateleira = request.CodigoPrateleira,
+                        id_produto = request.IdProduto,
+                        id_usuario = request.IdUsuario ?? GetIdUsuario(),
+                        quantidade,
+                        observacao = request.Observacao,
+                        id_requisicao = (int?)null
+                    });
+
+                return Ok(porPrateleira);
+            }
+            catch (PostgresException ex)
+            {
+                return BadRequest(ex.MessageText);
+            }
         }
 
+        // Saída direta na filial (sem prateleira)
+        await conn.OpenAsync();
+        await using var tx = await conn.BeginTransactionAsync();
+
+        var saldoAtual = await conn.QueryFirstOrDefaultAsync<int?>(@"
+            SELECT qtd_atual
+            FROM EstoqueFilial
+            WHERE id_produto = @IdProduto
+              AND id_filial = @IdFilial
+            FOR UPDATE",
+            new { request.IdProduto, request.IdFilial }, tx);
+
+        if (saldoAtual == null || saldoAtual < quantidade)
+            return BadRequest("Saldo insuficiente.");
+
+        var saldoApos = saldoAtual.Value - quantidade;
+
         await conn.ExecuteAsync(@"
-            UPDATE EstoqueSaldo
-            SET quantidade = quantidade - @Quantidade
+            UPDATE EstoqueFilial
+            SET qtd_atual = @SaldoApos
             WHERE id_produto = @IdProduto
               AND id_filial = @IdFilial",
+            new { SaldoApos = saldoApos, request.IdProduto, request.IdFilial }, tx);
+
+        var idMovimentacao = await conn.ExecuteScalarAsync<int>(@"
+            INSERT INTO Movimentacoes
+                (id_produto, id_filial, id_prateleira, id_usuario, tipo,
+                 quantidade, saldo_apos, data_hora, observacao, origem_scan)
+            VALUES
+                (@IdProduto, @IdFilial, @IdPrateleira, @IdUsuario, 'SAIDA',
+                 @Quantidade, @SaldoApos, NOW(), @Observacao, false)
+            RETURNING id_movimentacao",
             new
             {
                 request.IdProduto,
                 request.IdFilial,
-                request.Quantidade
-            });
+                request.IdPrateleira,
+                IdUsuario = request.IdUsuario ?? GetIdUsuario(),
+                Quantidade = quantidade,
+                SaldoApos = saldoApos,
+                request.Observacao
+            }, tx);
 
-        await conn.ExecuteAsync(@"
-            INSERT INTO MovimentacoesEstoque
-            (
-                tipo,
-                id_produto,
-                id_filial,
-                quantidade,
-                observacao,
-                usuario,
-                data_movimentacao
-            )
-            VALUES
-            (
-                'SAIDA',
-                @IdProduto,
-                @IdFilial,
-                @Quantidade,
-                @Observacao,
-                @Usuario,
-                GETDATE()
-            )",
-            request);
+        await tx.CommitAsync();
 
-        return Ok("Saída registrada com sucesso.");
+        return Ok(new
+        {
+            idMovimentacao,
+            idProduto = request.IdProduto,
+            idFilial = request.IdFilial,
+            saldoAnterior = saldoAtual.Value,
+            saldoAtual = saldoApos,
+            quantidade
+        });
     }
 
     // =========================================
@@ -162,22 +158,22 @@ public class MovimentacoesController : ControllerBase
     [HttpGet("saldo")]
     public async Task<IActionResult> Saldo([FromQuery] int idFilial)
     {
-        using var conn =new NpgsqlConnection(_connectionString);
+        using var conn = new NpgsqlConnection(_connectionString);
 
         var saldo = await conn.QueryAsync(@"
             SELECT
-                es.id_produto AS idProduto,
+                ef.id_produto AS ""idProduto"",
                 p.nome,
-                p.codigo_sku AS codigoSku,
-                p.unidade_medida AS unidade,
-                es.quantidade,
+                p.codigo_sku AS ""codigoSku"",
+                p.unidade,
+                ef.qtd_atual AS quantidade,
+                ef.qtd_minima AS ""estoqueMinimo"",
                 f.nome AS filial
-            FROM EstoqueSaldo es
-            INNER JOIN Produtos p
-                ON es.id_produto = p.id_produto
-            INNER JOIN Filiais f
-                ON es.id_filial = f.id_filial
-            WHERE es.id_filial = @IdFilial
+            FROM EstoqueFilial ef
+            INNER JOIN Produtos p ON ef.id_produto = p.id_produto
+            INNER JOIN Filiais f ON ef.id_filial = f.id_filial
+            WHERE ef.id_filial = @IdFilial
+              AND p.ativo = true
             ORDER BY p.nome",
             new { IdFilial = idFilial });
 
@@ -191,31 +187,20 @@ public class MovimentacoesController : ControllerBase
     [HttpGet("kardex")]
     public async Task<IActionResult> Kardex(
         [FromQuery] int idFilial,
-        [FromQuery] int? idProduto)
+        [FromQuery] int? idProduto,
+        [FromQuery] DateTime? dataInicio,
+        [FromQuery] DateTime? dataFim)
     {
         using var conn = new NpgsqlConnection(_connectionString);
 
-        var kardex = await conn.QueryAsync(@"
-            SELECT
-                m.id_movimentacao AS idMovimentacao,
-                m.tipo,
-                p.nome AS produto,
-                p.codigo_sku AS codigoSku,
-                m.quantidade,
-                m.observacao,
-                m.usuario,
-                m.data_movimentacao AS dataMovimentacao
-            FROM MovimentacoesEstoque m
-            INNER JOIN Produtos p
-                ON m.id_produto = p.id_produto
-            WHERE m.id_filial = @IdFilial
-              AND (@IdProduto IS NULL
-                   OR m.id_produto = @IdProduto)
-            ORDER BY m.data_movimentacao DESC",
+        var kardex = await conn.QueryAsync(
+            "SELECT * FROM sp_kardex(@id_filial, @id_produto, @data_inicio, @data_fim)",
             new
             {
-                IdFilial = idFilial,
-                IdProduto = idProduto
+                id_filial = idFilial,
+                id_produto = idProduto,
+                data_inicio = dataInicio,
+                data_fim = dataFim
             });
 
         return Ok(kardex);
@@ -231,15 +216,24 @@ public class MovimentacoesController : ControllerBase
         using var conn = new NpgsqlConnection(_connectionString);
 
         var produto = await conn.QueryFirstOrDefaultAsync(@"
-            SELECT LIMIT 1
-                p.id_produto AS idProduto,
+            SELECT
+                p.id_produto AS ""idProduto"",
                 p.nome,
-                p.codigo_sku AS codigoSku,
-                p.codigo_barras AS codigoBarras,
-                p.unidade_medida AS unidade
+                p.codigo_sku AS ""codigoSku"",
+                e.codigo_barras AS ""codigoBarras"",
+                p.unidade,
+                e.id_filial AS ""idFilial"",
+                ef.qtd_atual AS saldo
             FROM Produtos p
-            WHERE p.codigo_barras = @Codigo
-               OR p.codigo_sku = @Codigo",
+            LEFT JOIN Etiquetas e
+                ON e.id_produto = p.id_produto
+               AND e.ativo = true
+            LEFT JOIN EstoqueFilial ef
+                ON ef.id_produto = p.id_produto
+               AND ef.id_filial = e.id_filial
+            WHERE (e.codigo_barras = @Codigo OR p.codigo_sku = @Codigo)
+              AND p.ativo = true
+            LIMIT 1",
             new { Codigo = codigo });
 
         if (produto == null)
@@ -259,20 +253,24 @@ public class MovimentacoesController : ControllerBase
 
         var produtos = await conn.QueryAsync(@"
             SELECT
+                p.id_produto AS ""idProduto"",
                 p.nome,
-                p.codigo_sku AS codigoSku,
-                es.quantidade,
+                p.codigo_sku AS ""codigoSku"",
+                p.unidade,
+                ef.qtd_atual AS quantidade,
                 pr.descricao AS prateleira,
+                pr.codigo_barras AS ""codigoPrateleira"",
                 pp.posicao
             FROM ProdutoPrateleira pp
             INNER JOIN Produtos p
                 ON pp.id_produto = p.id_produto
             INNER JOIN Prateleiras pr
                 ON pp.id_prateleira = pr.id_prateleira
-            LEFT JOIN EstoqueSaldo es
-                ON es.id_produto = p.id_produto
-               AND es.id_filial = pp.id_filial
+            LEFT JOIN EstoqueFilial ef
+                ON ef.id_produto = p.id_produto
+               AND ef.id_filial = pp.id_filial
             WHERE pr.codigo_barras = @Codigo
+              AND p.ativo = true
             ORDER BY p.nome",
             new { Codigo = codigo });
 
@@ -284,6 +282,9 @@ public class MovimentacaoRequest
 {
     public int IdProduto { get; set; }
     public int IdFilial { get; set; }
+    public int? IdPrateleira { get; set; }
+    public string? CodigoPrateleira { get; set; }
+    public int? IdUsuario { get; set; }
     public decimal Quantidade { get; set; }
     public string? Observacao { get; set; }
     public string? Usuario { get; set; }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Dapper;
@@ -24,11 +24,11 @@ public class NotificacoesController : ControllerBase
         
         var lista = await conn.QueryAsync(@"
             SELECT
-                id_notificacao AS idNotificacao,
+                id_notificacao AS ""idNotificacao"",
                 titulo,
                 corpo,
                 lida,
-                criado_em AS criadoEm
+                criado_em AS ""criadoEm""
             FROM Notificacoes
             WHERE id_usuario = @IdUsuario
             ORDER BY criado_em DESC",
