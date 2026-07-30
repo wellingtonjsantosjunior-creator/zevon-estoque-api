@@ -64,7 +64,7 @@ public class FiliaisController : ControllerBase
             INSERT INTO Filiais
             (nome, cnpj, endereco, cidade, ativo, criado_em, IdEmpresa)
             VALUES
-            (@Nome, @Cnpj, @Endereco, @Cidade, 1, GETDATE(), @IdEmpresa)",
+            (@Nome, @Cnpj, @Endereco, @Cidade, true, NOW(), @IdEmpresa)",
             new
             {
                 filial.Nome,
