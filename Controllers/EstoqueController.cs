@@ -57,6 +57,11 @@ public class EstoqueController : ControllerBase
             // Regra de negócio levantada pela função (RAISE EXCEPTION)
             return BadRequest(ex.MessageText);
         }
+        catch (PostgresException ex) when (ex.SqlState == "23503")
+        {
+            // FK inválida (produto/filial/prateleira/usuário inexistente)
+            return BadRequest($"Referência inválida: {ex.ConstraintName}");
+        }
     }
 
     [HttpPost("saida")]
@@ -92,6 +97,11 @@ public class EstoqueController : ControllerBase
         {
             // SALDO_INSUFICIENTE / PRATELEIRA_NAO_ENCONTRADA / QUANTIDADE_INVALIDA
             return BadRequest(ex.MessageText);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23503")
+        {
+            // FK inválida (produto/filial/prateleira/usuário inexistente)
+            return BadRequest($"Referência inválida: {ex.ConstraintName}");
         }
     }
 
