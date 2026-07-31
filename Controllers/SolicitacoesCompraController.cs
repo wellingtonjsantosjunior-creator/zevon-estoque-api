@@ -94,7 +94,7 @@ public async Task<IActionResult> Listar(
                 p.nome AS produto,
                 ef.qtd_atual AS ""saldoAtual"",
                 ef.qtd_minima AS ""saldoMinimo"",
-                ef.qtd_minima - ef.qtd_atual AS quantidade
+                COALESCE(ef.qtd_maxima, ef.qtd_minima) - ef.qtd_atual AS quantidade
             FROM EstoqueFilial ef
             INNER JOIN Produtos p ON ef.id_produto = p.id_produto
             WHERE ef.id_filial = @IdFilial

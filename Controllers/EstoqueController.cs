@@ -105,6 +105,49 @@ public class EstoqueController : ControllerBase
         }
     }
 
+    // ── RECALCULAR MÍNIMO/MÁXIMO A PARTIR DO CONSUMO ──────────────
+    // Política min-max: mínimo = consumo médio mensal (ponto de reposição),
+    // máximo = 2x o consumo médio mensal (nível alvo após reposição).
+    // Só atualiza produtos com saída registrada no período; os demais mantêm
+    // o valor atual (sem histórico não há base para recalcular).
+    [HttpPost("recalcular-minimos/{idFilial}")]
+    public async Task<IActionResult> RecalcularMinimos(
+        int idFilial, [FromQuery] int meses = 3)
+    {
+        if (meses <= 0) return BadRequest("Informe um número de meses válido.");
+
+        using var conn = new NpgsqlConnection(_connectionString);
+
+        var atualizados = await conn.QueryAsync(@"
+            WITH consumo AS (
+                SELECT m.id_produto, SUM(m.quantidade) AS total_saida
+                FROM Movimentacoes m
+                WHERE m.id_filial = @IdFilial
+                  AND m.tipo = 'SAIDA'
+                  AND m.data_hora >= NOW() - make_interval(months => @Meses)
+                GROUP BY m.id_produto
+            )
+            UPDATE EstoqueFilial ef
+            SET qtd_minima = CEIL(c.total_saida / @Meses::numeric)::int,
+                qtd_maxima = CEIL(c.total_saida / @Meses::numeric * 2)::int
+            FROM consumo c
+            WHERE ef.id_produto = c.id_produto
+              AND ef.id_filial = @IdFilial
+            RETURNING
+                ef.id_produto AS ""idProduto"",
+                ef.qtd_minima AS ""novoMinimo"",
+                ef.qtd_maxima AS ""novoMaximo""",
+            new { IdFilial = idFilial, Meses = meses });
+
+        var lista = atualizados.ToList();
+        return Ok(new
+        {
+            produtosAtualizados = lista.Count,
+            mesesConsiderados = meses,
+            detalhes = lista
+        });
+    }
+
     [HttpGet("kardex")]
     public async Task<IActionResult> Kardex([FromQuery] KardexFiltro filtro)
     {
