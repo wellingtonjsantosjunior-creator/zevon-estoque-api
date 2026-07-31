@@ -307,21 +307,25 @@ var fichasContadas = await conn.QueryAsync(@"
       AND f.saldo_contado IS NOT NULL",
     new { Id = id });
 
-foreach (var ficha in fichasContadas)
+// Um produto pode estar em varias prateleiras da mesma filial: o saldo em
+// EstoqueFilial e o TOTAL da filial, entao soma todas as fichas do produto
+// antes de gravar (gravar ficha a ficha sobrescrevia em vez de somar).
+var totaisPorProduto = fichasContadas
+    .GroupBy(f => new { IdProduto = (int)f.id_produto, IdFilial = (int)f.id_filial })
+    .Select(g => new { g.Key.IdProduto, g.Key.IdFilial, Total = g.Sum(f => (int)f.saldo_contado) });
+
+foreach (var total in totaisPorProduto)
 {
-    // Atualiza saldo no EstoqueFilial
     await conn.ExecuteAsync(@"
         UPDATE EstoqueFilial
-        SET qtd_atual = @SaldoContado
+        SET qtd_atual = @Total
         WHERE id_produto = @IdProduto
           AND id_filial = @IdFilial",
-        new
-        {
-            SaldoContado = (int)ficha.saldo_contado,
-            IdProduto = (int)ficha.id_produto,
-            IdFilial = (int)ficha.id_filial
-        });
+        new { total.Total, total.IdProduto, total.IdFilial });
+}
 
+foreach (var ficha in fichasContadas)
+{
     // Registra no Kardex como INVENTARIO
     var saldoApos = (int)ficha.saldo_contado;
     var tipo = (int)ficha.divergencia > 0 ? "ENTRADA" : "SAIDA";
