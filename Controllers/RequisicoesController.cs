@@ -249,7 +249,7 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
     // ── ATUALIZAR STATUS DO GRUPO INTEIRO ─────────────────────────
     [HttpPut("grupo/{idGrupo}/status")]
     public async Task<IActionResult> AtualizarStatusGrupo(
-        string idGrupo,
+        Guid idGrupo,
         [FromBody] AtualizarStatusRequest request)
     {
         using var conn = new NpgsqlConnection(_connectionString);

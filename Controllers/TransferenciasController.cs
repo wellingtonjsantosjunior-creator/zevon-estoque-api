@@ -247,7 +247,7 @@ public class TransferenciasController : ControllerBase
 
     // ── BUSCAR GRUPO POR QR CODE ──────────────────────────────────
     [HttpGet("grupo/{idGrupo}")]
-    public async Task<IActionResult> BuscarGrupo(string idGrupo)
+    public async Task<IActionResult> BuscarGrupo(Guid idGrupo)
     {
         using var conn = new NpgsqlConnection(_connectionString);
         var itens = await conn.QueryAsync(@"
@@ -346,7 +346,7 @@ public class TransferenciasController : ControllerBase
     // ── RECEBER GRUPO INTEIRO ─────────────────────────────────────
     [HttpPut("grupo/{idGrupo}/receber")]
     public async Task<IActionResult> ReceberGrupo(
-        string idGrupo, [FromBody] ReceberGrupoRequest request)
+        Guid idGrupo, [FromBody] ReceberGrupoRequest request)
     {
         using var conn = new NpgsqlConnection(_connectionString);
 
