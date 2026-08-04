@@ -43,6 +43,7 @@ public class ProdutosController : ControllerBase
                 p.unidade,
                 p.ativo,
                 p.criado_em AS ""criadoEm"",
+                p.codigo_barras AS ""codigoBarras"",
                 ef.qtd_atual AS saldo,
                 ef.qtd_minima AS ""estoqueMinimo"",
                 (SELECT codigo_barras FROM Etiquetas
@@ -83,6 +84,7 @@ public class ProdutosController : ControllerBase
                 p.unidade,
                 p.ativo,
                 p.criado_em AS ""criadoEm"",
+                p.codigo_barras AS ""codigoBarras"",
                 (SELECT codigo_barras FROM Etiquetas
  WHERE id_produto = p.id_produto AND ativo = true
  LIMIT 1) AS ""codigoEtiqueta""
@@ -136,6 +138,64 @@ public class ProdutosController : ControllerBase
         public int IdFilial { get; set; }
         public int QtdMinima { get; set; }
         public decimal? PrecoCusto { get; set; }
+    }
+
+    // ── BUSCAR POR CÓDIGO DE BARRAS (EAN) ─────────────────────────
+    // Usado pela Entrada Scanner: aponta a câmera pro código de barras
+    // de fábrica do produto e já traz o produto + saldo atual na filial.
+    [HttpGet("por-codigo-barras/{codigo}")]
+    public async Task<IActionResult> BuscarPorCodigoBarras(
+        string codigo, [FromQuery] int? idFilial)
+    {
+        var idEmpresa = GetIdEmpresa();
+        using var conn = new NpgsqlConnection(_connectionString);
+
+        var produto = await conn.QueryFirstOrDefaultAsync(@"
+            SELECT
+                p.id_produto AS ""idProduto"",
+                p.nome,
+                p.codigo_sku AS ""codigoSku"",
+                p.codigo_sku AS sku,
+                p.unidade,
+                p.codigo_barras AS ""codigoBarras"",
+                ef.qtd_atual AS saldo,
+                ef.qtd_minima AS ""estoqueMinimo""
+            FROM Produtos p
+            LEFT JOIN EstoqueFilial ef ON ef.id_produto = p.id_produto
+                AND ef.id_filial = @IdFilial
+            WHERE p.codigo_barras = @Codigo
+              AND p.IdEmpresa = @IdEmpresa
+              AND p.ativo = true
+            LIMIT 1",
+            new { Codigo = codigo, IdFilial = idFilial, IdEmpresa = idEmpresa });
+
+        if (produto == null)
+            return NotFound("Nenhum produto cadastrado com esse código de barras.");
+
+        return Ok(produto);
+    }
+
+    // ── ATUALIZAR CÓDIGO DE BARRAS ────────────────────────────────
+    [HttpPut("{id}/codigo-barras")]
+    public async Task<IActionResult> AtualizarCodigoBarras(
+        int id, [FromBody] AtualizarCodigoBarrasRequest request)
+    {
+        var idEmpresa = GetIdEmpresa();
+        using var conn = new NpgsqlConnection(_connectionString);
+
+        await conn.ExecuteAsync(@"
+            UPDATE Produtos
+            SET codigo_barras = @CodigoBarras
+            WHERE id_produto = @Id
+              AND IdEmpresa = @IdEmpresa",
+            new { request.CodigoBarras, Id = id, IdEmpresa = idEmpresa });
+
+        return Ok("Código de barras atualizado.");
+    }
+
+    public class AtualizarCodigoBarrasRequest
+    {
+        public string? CodigoBarras { get; set; }
     }
 
     [HttpPost]
