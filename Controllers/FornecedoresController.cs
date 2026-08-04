@@ -27,7 +27,8 @@ public class FornecedoresController : ControllerBase
                 id_fornecedor AS ""idFornecedor"",
                 nome,
                 telefone,
-                email
+                email,
+                cnpj
             FROM Fornecedores
             ORDER BY nome");
 
@@ -40,8 +41,8 @@ public class FornecedoresController : ControllerBase
         using var conn =new NpgsqlConnection(_connectionString);
 
         await conn.ExecuteAsync(@"
-            INSERT INTO Fornecedores (nome, telefone, email)
-            VALUES (@Nome, @Telefone, @Email)", fornecedor);
+            INSERT INTO Fornecedores (nome, telefone, email, cnpj)
+            VALUES (@Nome, @Telefone, @Email, @Cnpj)", fornecedor);
 
         return Ok("Fornecedor cadastrado com sucesso.");
     }
@@ -55,14 +56,16 @@ public class FornecedoresController : ControllerBase
             UPDATE Fornecedores
             SET nome = @Nome,
                 telefone = @Telefone,
-                email = @Email
+                email = @Email,
+                cnpj = @Cnpj
             WHERE id_fornecedor = @Id",
             new
             {
                 Id = id,
                 fornecedor.Nome,
                 fornecedor.Telefone,
-                fornecedor.Email
+                fornecedor.Email,
+                fornecedor.Cnpj
             });
 
         return Ok("Fornecedor atualizado com sucesso.");
@@ -87,4 +90,5 @@ public class FornecedorRequest
     public string Nome { get; set; } = string.Empty;
     public string? Telefone { get; set; }
     public string? Email { get; set; }
+    public string? Cnpj { get; set; }
 }
