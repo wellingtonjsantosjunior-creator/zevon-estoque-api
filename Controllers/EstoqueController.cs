@@ -39,7 +39,7 @@ public class EstoqueController : ControllerBase
         try
         {
             var resultado = await conn.QueryFirstOrDefaultAsync(
-                "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao)",
+                "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao, @numero_nf)",
                 new
                 {
                     id_produto = request.IdProduto,
@@ -47,7 +47,8 @@ public class EstoqueController : ControllerBase
                     id_prateleira = request.IdPrateleira,
                     id_usuario = request.IdUsuario,
                     quantidade = request.Quantidade,
-                    observacao = request.Observacao
+                    observacao = request.Observacao,
+                    numero_nf = request.NumeroNf
                 });
 
             return Ok(resultado);

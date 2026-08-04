@@ -23,6 +23,7 @@ public class EntradaRequest
     public int IdUsuario { get; set; }
     public int Quantidade { get; set; }
     public string? Observacao { get; set; }
+    public string? NumeroNf { get; set; }
 }
 
 public class SaidaRequest

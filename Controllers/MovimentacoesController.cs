@@ -37,7 +37,7 @@ public class MovimentacoesController : ControllerBase
         try
         {
             var resultado = await conn.QueryFirstOrDefaultAsync(
-                "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao)",
+                "SELECT * FROM sp_entrada_estoque(@id_produto, @id_filial, @id_prateleira, @id_usuario, @quantidade, @observacao, @numero_nf)",
                 new
                 {
                     id_produto = request.IdProduto,
@@ -45,7 +45,8 @@ public class MovimentacoesController : ControllerBase
                     id_prateleira = request.IdPrateleira,
                     id_usuario = request.IdUsuario ?? GetIdUsuario(),
                     quantidade,
-                    observacao = request.Observacao
+                    observacao = request.Observacao,
+                    numero_nf = request.NumeroNf
                 });
 
             return Ok(resultado);
@@ -288,4 +289,5 @@ public class MovimentacaoRequest
     public decimal Quantidade { get; set; }
     public string? Observacao { get; set; }
     public string? Usuario { get; set; }
+    public string? NumeroNf { get; set; }
 }
