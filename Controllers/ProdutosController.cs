@@ -183,14 +183,22 @@ public class ProdutosController : ControllerBase
         var idEmpresa = GetIdEmpresa();
         using var conn = new NpgsqlConnection(_connectionString);
 
-        await conn.ExecuteAsync(@"
-            UPDATE Produtos
-            SET codigo_barras = @CodigoBarras
-            WHERE id_produto = @Id
-              AND IdEmpresa = @IdEmpresa",
-            new { request.CodigoBarras, Id = id, IdEmpresa = idEmpresa });
+        try
+        {
+            await conn.ExecuteAsync(@"
+                UPDATE Produtos
+                SET codigo_barras = @CodigoBarras
+                WHERE id_produto = @Id
+                  AND IdEmpresa = @IdEmpresa",
+                new { request.CodigoBarras, Id = id, IdEmpresa = idEmpresa });
 
-        return Ok("Código de barras atualizado.");
+            return Ok("Código de barras atualizado.");
+        }
+        catch (PostgresException ex) when (ex.SqlState == "22001")
+        {
+            // Código escaneado maior que o campo suporta (ex: 2D/GS1-128 muito longo)
+            return BadRequest("Código de barras muito longo (máximo 100 caracteres).");
+        }
     }
 
     public class AtualizarCodigoBarrasRequest
