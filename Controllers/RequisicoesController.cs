@@ -266,13 +266,14 @@ public async Task<IActionResult> Criar([FromBody] RequisicaoRequest request)
 
         if (!itens.Any()) return NotFound("Grupo nao encontrado.");
 
-        // Atualiza todos os itens do grupo
+        // Atualiza todos os itens do grupo, exceto os já rejeitados
+        // individualmente (senão o checklist de separação os "des-rejeita").
         await conn.ExecuteAsync(@"
             UPDATE Requisicoes
             SET status = @Status,
                 id_usuario_atendente = @IdAtendente,
                 observacao_atendente = @Observacao
-            WHERE id_grupo = @IdGrupo",
+            WHERE id_grupo = @IdGrupo AND status <> 'REJEITADO'",
             new
             {
                 Status = request.Status,
